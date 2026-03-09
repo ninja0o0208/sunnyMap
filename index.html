@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中和軌跡地圖 - 終極自訂版 🎮</title>
+    <title>中和軌跡地圖 - 命名與高亮防呆版 🗺️</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <style>
@@ -15,10 +15,14 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 300px; max-height: 90vh; overflow-y: auto;
         }
         .section-title { font-weight: bold; border-bottom: 2px solid #FF007F; margin: 10px 0 5px 0; padding-bottom: 3px; font-size: 14px; }
-        .btn { width: 100%; margin-top: 8px; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; }
-        .btn-green { background: #00C851; } .btn-red { background: #ff4444; }
+        .btn { width: 100%; margin-top: 8px; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-green { background: #00C851; } .btn-green:hover { background: #007E33; }
+        .btn-red { background: #ff4444; } .btn-red:hover { background: #CC0000; }
         
-        /* 衣櫥與圖示設定 */
+        /* 表單輸入框 */
+        .input-box { width: 93%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 5px; font-size: 13px; }
+        
+        /* 衣櫥設定 */
         .wardrobe-selector { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0 10px 0; background: white; padding: 5px; border-radius: 5px; }
         .wardrobe-item { width: 40px; height: 40px; cursor: pointer; border: 2px solid transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #555; background: #eee; }
         .wardrobe-item.selected { border-color: #FF007F; background: #ffe6f0; }
@@ -30,8 +34,15 @@
         .date-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f9f9f9; padding: 5px; border-radius: 4px; }
         .date-header:hover { background: #eee; }
         .route-details { padding: 5px 10px; background: #fafafa; margin-top: 2px; border-left: 3px solid #FF007F; }
-        .route-item { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; color: #555; }
-        .del-btn { color: white; background: #ff4444; border: none; border-radius: 3px; cursor: pointer; padding: 2px 5px; font-size: 12px; }
+        
+        /* 路線項目互動設定 */
+        .route-item { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; color: #555; padding: 4px; border-radius: 4px; transition: 0.2s; }
+        .route-item:hover { background: #e3f2fd; } /* 滑鼠移過去變微藍色 */
+        .route-name { cursor: pointer; flex-grow: 1; font-weight: bold; color: #0078FF; }
+        .route-name:hover { text-decoration: underline; }
+        
+        .del-btn { color: white; background: #ff4444; border: none; border-radius: 3px; cursor: pointer; padding: 2px 5px; font-size: 12px; margin-left: 5px; }
+        .del-btn:hover { background: #CC0000; }
         
         .custom-icon { background: transparent; border: none; }
         .bouncing { animation: bounce 1.5s infinite alternate; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); text-align: center; }
@@ -41,13 +52,13 @@
 <body>
 
 <div id="control-panel">
-    <div class="section-title">📅 1. 選擇日期</div>
-    <input type="date" id="recordDate" style="width:95%">
+    <div class="section-title">📅 1. 紀錄日期與名稱</div>
+    <input type="date" id="recordDate" class="input-box">
+    <input type="text" id="routeName" class="input-box" placeholder="幫這段路線取個名字 (例如: 去買宵夜)">
 
-    <div class="section-title">👗 2. 選初始圖示與密度</div>
-    <div class="wardrobe-selector" id="wardrobe">
-        </div>
-    <div style="font-size: 12px; margin-bottom: 5px;">
+    <div class="section-title">👗 2. 選圖示與密度</div>
+    <div class="wardrobe-selector" id="wardrobe"></div>
+    <div style="font-size: 12px; margin-bottom: 5px; color:#555;">
         放置密度：
         <select id="densityInput" style="padding: 2px;">
             <option value="100">100 公尺</option>
@@ -58,11 +69,11 @@
     </div>
 
     <div class="section-title">🗺️ 3. 規劃與同步</div>
-    <input type="file" id="photoInput" multiple style="font-size:12px; margin-bottom: 5px;">
-    <button id="sync-btn" class="btn btn-green" onclick="save()">✅ 同步到雲端</button>
-    <button class="btn btn-red" onclick="clearLine()">🗑️ 清除畫線</button>
+    <input type="file" id="photoInput" multiple style="font-size:12px; margin-bottom: 5px; width: 100%;">
+    <button id="sync-btn" class="btn btn-green" onclick="save()">✅ 同步路線到雲端</button>
+    <button class="btn btn-red" onclick="clearLine()">🗑️ 清除正在畫的紅線</button>
 
-    <div class="section-title">📚 歷史軌跡管理</div>
+    <div class="section-title">📚 歷史軌跡管理 <small style="color:#888;">(滑鼠移入可高亮)</small></div>
     <div id="history-list" class="date-list">連線中...</div>
 </div>
 
@@ -73,11 +84,11 @@
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-    // ★ 請換成你的 GAS 網址 (確認是新部署的版本)
+    // ★ 請換成你的 GAS Exec 網址
     const gasApiUrl = 'https://script.google.com/macros/s/AKfycbzGDFyCsjJ3JIG0oq00gFYSPg0i9dRYGLNM4Aj0TXtygeKvxmZQ3OZCjQUi-mTjlRVqOw/exec'; 
 
     const initialImages = [
-        'none', // ★ 特殊選項：單純路徑無少女
+        'none', 
         'https://i.imgur.com/VgQ7KC8.png', 'https://i.imgur.com/W7cnJ5t.png', 
         'https://i.imgur.com/Yn7yOkO.png', 'https://i.imgur.com/hzpbX9F.png', 
         'https://i.imgur.com/H8a80ur.png', 'https://i.imgur.com/QTvDNBJ.png', 
@@ -89,23 +100,24 @@
         lv5: 'https://i.imgur.com/H8GpTgL.png'   
     };
 
-    let selectedImg = initialImages[1]; // 預設選第一張真圖
+    let selectedImg = initialImages[1]; 
     let allRoutes = [];
-    let layers = [];
+    
+    // ★ 路線圖層管理器：用來控制哪條線要發亮
+    let routeLayersMap = {}; // 格式: { "路線ID": { line: 路線物件, markers: [圖示物件] } }
     let gridDates = {}; 
 
-    // 初始化衣櫥 (包含「無」的選項)
+    // 初始化衣櫥
     const wardrobeDiv = document.getElementById('wardrobe');
     initialImages.forEach((url, i) => {
         const div = document.createElement('div');
         div.className = 'wardrobe-item' + (i === 1 ? ' selected' : '');
         if (url === 'none') {
-            div.innerHTML = `🚫<br>路線`;
+            div.innerHTML = `🚫<br>純線`;
             div.style.background = '#ffdada';
         } else {
             div.innerHTML = `<img src="${url}">`;
         }
-        
         div.onclick = () => {
             document.querySelectorAll('.wardrobe-item').forEach(el => el.classList.remove('selected'));
             div.classList.add('selected');
@@ -139,7 +151,7 @@
         }).catch(() => { document.getElementById('history-list').innerHTML = '讀取失敗'; });
     }
 
-    // ★ 歷史列表渲染：分組、計算總數、加上展開與刪除按鈕
+    // ★ 渲染列表：加入 Hover 與 Click 事件
     function renderUI() {
         const container = document.getElementById('history-list');
         if (allRoutes.length === 0) { container.innerHTML = '尚無紀錄'; return; }
@@ -157,16 +169,20 @@
             <div class="date-group">
                 <div class="date-header">
                     <label><input type="checkbox" class="dt-cb" value="${d}" checked onchange="draw()"> ${d} (共 ${groups[d].length} 段)</label>
-                    <span style="font-size:10px; color:#0078FF;" onclick="toggleDetails('${d}')">▼ 展開管理</span>
+                    <span style="font-size:10px; color:#0078FF;" onclick="toggleDetails('${d}')">▼ 展開</span>
                 </div>
                 <div id="details-${d}" class="route-details" style="display:none;">`;
             
             groups[d].forEach((r, idx) => {
-                const densityText = (r.emojiType === 'none') ? '純路徑' : `間距 ${r.density || 300}m`;
+                const densityText = (r.emojiType === 'none') ? '無圖' : `${r.density || 300}m`;
+                // 如果有名字就顯示名字，沒有就顯示 路線1、路線2
+                const routeName = r.name ? r.name : `路線 ${idx + 1}`; 
+                
+                // ★ 綁定滑鼠移入、移出、點擊事件
                 html += `
-                    <div class="route-item">
-                        <span>▶ 路線 ${idx + 1} <small style="color:#888;">(${densityText})</small></span>
-                        <button class="del-btn" onclick="deleteRoute('${r.id}')">刪除</button>
+                    <div class="route-item" onmouseenter="highlightRoute('${r.id}')" onmouseleave="resetHighlight()">
+                        <span class="route-name" onclick="zoomToRoute('${r.id}')" title="點擊飛到路線位置">▶ ${routeName} <small style="color:#888;">(${densityText})</small></span>
+                        <button class="del-btn" onclick="deleteRoute('${r.id}')" title="刪除這段路線">🗑️</button>
                     </div>`;
             });
             html += `</div></div>`;
@@ -181,15 +197,19 @@
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
     };
 
+    // ★ 繪製地圖並將物件存入管理器
     function draw() {
-        layers.forEach(l => map.removeLayer(l));
-        layers = [];
+        // 清空舊圖層
+        Object.values(routeLayersMap).forEach(obj => {
+            map.removeLayer(obj.line);
+            obj.markers.forEach(m => map.removeLayer(m));
+        });
+        routeLayersMap = {};
         gridDates = {}; 
 
         const checkedDates = Array.from(document.querySelectorAll('.dt-cb:checked')).map(c => c.value);
         const filteredRoutes = allRoutes.filter(r => checkedDates.includes(formatD(r.date)));
 
-        // 1. 建立網格與日期關聯
         filteredRoutes.forEach(r => {
             if (!r.path) return;
             const dateStr = formatD(r.date);
@@ -200,50 +220,72 @@
             });
         });
 
-        // 2. 依照「累積天數」與「自訂密度」繪製
         filteredRoutes.forEach(r => {
             const dStr = formatD(r.date);
-            const routeDensity = r.density || 300; // 讀取該路線專屬的密度
+            const routeDensity = r.density || 300; 
             
+            // 繪製紅線
             const line = L.polyline(r.path, {color: '#FF007F', weight: 6, opacity: 0.35}).addTo(map);
-            layers.push(line);
+            
+            // 將這條線註冊進去管理器
+            routeLayersMap[r.id] = { line: line, markers: [] };
 
-            // 如果該路線設定為 'none' (無少女)，就只畫線，不放任何 Marker，直接進入下一段迴圈
-            if (r.emojiType === 'none') return;
+            if (r.emojiType === 'none') return; // 如果是純路線就不放圖
 
             let dSum = 0;
             for (let i = 0; i < r.path.length; i++) {
                 const p = r.path[i];
                 if (i > 0) dSum += map.distance(r.path[i-1], p);
 
-                // 使用自訂密度來判定放圖時機
                 if (i === 0 || i === r.path.length - 1 || dSum > routeDensity) {
                     const id = getGridId(p.lat || p[0], p.lng || p[1]);
                     const daysCount = gridDates[id] ? gridDates[id].size : 1;
                     
                     let imgToUse = r.emojiType || initialImages[1];
-                    if (daysCount >= 5) {
-                        imgToUse = upgradeStages.lv5;
-                    } else if (daysCount >= 3) {
-                        imgToUse = upgradeStages.lv3;
-                    }
+                    if (daysCount >= 5) imgToUse = upgradeStages.lv5;
+                    else if (daysCount >= 3) imgToUse = upgradeStages.lv3;
 
-                    addMarker(p, `${dStr} (累積:${daysCount}天)`, imgToUse);
+                    const icon = L.divIcon({
+                        className: 'custom-icon',
+                        html: `<div class="bouncing"><img src="${imgToUse}" style="width:48px;height:48px"></div>`,
+                        iconSize: [48, 48], iconAnchor: [24, 24]
+                    });
+                    
+                    const m = L.marker(p, {icon}).addTo(map).bindPopup(`${r.name || '未命名'} <br> ${dStr} (累積:${daysCount}天)`);
+                    routeLayersMap[r.id].markers.push(m); // 存入管理器
                     dSum = 0;
                 }
             }
         });
     }
 
-    function addMarker(pos, txt, img) {
-        const icon = L.divIcon({
-            className: 'custom-icon',
-            html: `<div class="bouncing"><img src="${img}" style="width:48px;height:48px"></div>`,
-            iconSize: [48, 48], iconAnchor: [24, 24]
+    // ★ 新功能：高亮顯示路線 (滑鼠移入)
+    window.highlightRoute = function(id) {
+        Object.keys(routeLayersMap).forEach(key => {
+            if (key == id) {
+                // 目標路線發亮、變粗，並提到最上層
+                routeLayersMap[key].line.setStyle({color: '#00FFFF', weight: 8, opacity: 1});
+                routeLayersMap[key].line.bringToFront();
+            } else {
+                // 其他路線變灰暗
+                routeLayersMap[key].line.setStyle({color: '#999', weight: 4, opacity: 0.15});
+            }
         });
-        const m = L.marker(pos, {icon}).addTo(map).bindPopup(txt);
-        layers.push(m);
-    }
+    };
+
+    // ★ 新功能：還原高亮 (滑鼠移出)
+    window.resetHighlight = function() {
+        Object.keys(routeLayersMap).forEach(key => {
+            routeLayersMap[key].line.setStyle({color: '#FF007F', weight: 6, opacity: 0.35});
+        });
+    };
+
+    // ★ 新功能：點擊自動定位縮放
+    window.zoomToRoute = function(id) {
+        if (routeLayersMap[id] && routeLayersMap[id].line) {
+            map.fitBounds(routeLayersMap[id].line.getBounds(), { padding: [50, 50] });
+        }
+    };
 
     function formatD(d) {
         if (!d) return "";
@@ -253,7 +295,9 @@
 
     function save() {
         const date = document.getElementById('recordDate').value;
-        const density = document.getElementById('densityInput').value; // 抓取當前選擇的密度
+        const name = document.getElementById('routeName').value; // 抓取使用者輸入的名稱
+        const density = document.getElementById('densityInput').value; 
+        
         if (!date || !currentCoords) return alert('請先在地圖上規劃路線');
         
         const btn = document.getElementById('sync-btn');
@@ -263,24 +307,25 @@
             method: 'POST',
             body: JSON.stringify({
                 date: date, 
+                name: name || '未命名路線', // 如果沒輸入，預設名字
                 path: currentCoords, 
                 emojiType: selectedImg,
-                density: density // 將密度傳送給後端儲存
+                density: density 
             })
         }).then(() => {
             alert('儲存成功！');
             routing.setWaypoints([]);
             currentCoords = null;
+            document.getElementById('routeName').value = ''; // 清空輸入框
             load();
         }).finally(() => {
-            btn.disabled = false; btn.innerText = '✅ 同步到雲端';
+            btn.disabled = false; btn.innerText = '✅ 同步路線到雲端';
         });
     }
 
-    // ★ 刪除功能 API
     window.deleteRoute = function(id) {
-        if (!id) return alert('舊資料無法單獨刪除，請由試算表手動移除');
-        if (!confirm('確定要刪除這段路線嗎？刪除後無法復原！')) return;
+        if (!id || id === "undefined") return alert('這是舊版本的紀錄，請直接到 Google 試算表中手動刪除該列。');
+        if (!confirm('確定要刪除這段路線嗎？刪除後無法復原喔！')) return;
         
         document.getElementById('history-list').innerHTML = '正在刪除...';
         
@@ -288,7 +333,7 @@
             method: 'POST',
             body: JSON.stringify({ action: 'delete', id: id })
         }).then(() => {
-            load(); // 刪除完重新讀取
+            load(); 
         });
     };
 
