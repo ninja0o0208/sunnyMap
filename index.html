@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>中和軌跡地圖 - 完美截圖版 📸</title>
+    <title>中和怡君在哪兒</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <style>
@@ -31,7 +31,7 @@
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000;
             background: #FF9800; color: white; padding: 12px 25px; border: none; border-radius: 30px;
             font-weight: bold; cursor: pointer; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            transition: opacity 0.5s ease; /* 淡出淡入動畫 */
+            transition: opacity 0.5s ease;
         }
         
         /* 隱藏 UI 的專屬 class */
@@ -111,7 +111,7 @@
 
 <script>
     // ★ 記得換成你的 GAS Exec 網址
-    const gasApiUrl = 'https://script.google.com/macros/s/AKfycbzGDFyCsjJ3JIG0oq00gFYSPg0i9dRYGLNM4Aj0TXtygeKvxmZQ3OZCjQUi-mTjlRVqOw/exec'; 
+    const gasApiUrl = '你的_GAS_網址'; 
 
     const initialImages = [
         'none', 
@@ -153,11 +153,11 @@
     function resetUITimer() {
         if (!isScreenshotMode) return;
         const exitBtn = document.getElementById('exit-view-btn');
-        exitBtn.classList.remove('ui-hidden'); // 顯示按鈕
+        exitBtn.classList.remove('ui-hidden'); 
         
         clearTimeout(hideUITimer);
         hideUITimer = setTimeout(() => {
-            exitBtn.classList.add('ui-hidden'); // 2.5秒後透明化
+            exitBtn.classList.add('ui-hidden'); 
         }, 2500);
     }
 
@@ -166,7 +166,7 @@
         const toggleBtn = document.getElementById('toggle-panel-btn');
         const exitBtn = document.getElementById('exit-view-btn');
         const routingUI = document.querySelector('.leaflet-routing-container');
-        const zoomUI = document.querySelector('.leaflet-control-zoom'); // 抓取縮放按鈕
+        const zoomUI = document.querySelector('.leaflet-control-zoom'); 
 
         isScreenshotMode = isView;
 
@@ -175,15 +175,15 @@
             toggleBtn.style.display = 'none';
             exitBtn.style.display = 'block';
             if(routingUI) routingUI.style.display = 'none';
-            if(zoomUI) zoomUI.style.display = 'none'; // 隱藏縮放按鈕
-            resetUITimer(); // 啟動倒數隱藏計時器
+            if(zoomUI) zoomUI.style.display = 'none'; 
+            resetUITimer(); 
         } else {
             if(isPanelOpen) panel.classList.remove('panel-hidden');
             toggleBtn.style.display = 'block';
             exitBtn.style.display = 'none';
             exitBtn.classList.remove('ui-hidden'); 
             if(routingUI) routingUI.style.display = 'block';
-            if(zoomUI) zoomUI.style.display = 'block'; // 恢復縮放按鈕
+            if(zoomUI) zoomUI.style.display = 'block'; 
             clearTimeout(hideUITimer);
         }
     };
@@ -213,7 +213,6 @@
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     
-    // ★ 綁定觸控與滑鼠事件，只要動地圖就會喚醒「結束截圖」按鈕
     map.on('mousemove touchstart click', resetUITimer);
 
     const routing = L.Routing.control({
