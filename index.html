@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>中和軌跡地圖 - 手機響應截圖版 📱</title>
+    <title>中和軌跡地圖 - 完美截圖版 📸</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <style>
         body { margin: 0; padding: 0; font-family: sans-serif; background: #f4f4f4; overflow: hidden; }
         #map { width: 100vw; height: 100vh; } 
         
-        /* ★ 手機適應與收折按鈕 */
         #toggle-panel-btn {
             position: absolute; top: 15px; right: 15px; z-index: 2000;
             background: #0078FF; color: white; padding: 10px 15px; border: none; border-radius: 8px;
@@ -18,23 +17,25 @@
         }
         #toggle-panel-btn:hover { background: #0056b3; }
 
-        /* 核心控制面板 */
         #control-panel {
             position: absolute; top: 60px; right: 15px; z-index: 1000;
             background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 300px; max-width: 85vw; /* 防止手機超出螢幕 */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 300px; max-width: 85vw;
             max-height: calc(100vh - 80px); overflow-y: auto; transition: opacity 0.3s, transform 0.3s;
         }
         
-        /* 收折狀態的 CSS */
         .panel-hidden { opacity: 0; transform: translateY(-20px); pointer-events: none; }
 
-        /* 截圖模式返回按鈕 */
+        /* 截圖模式返回按鈕 (加入淡出動畫) */
         #exit-view-btn {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000;
             background: #FF9800; color: white; padding: 12px 25px; border: none; border-radius: 30px;
             font-weight: bold; cursor: pointer; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: opacity 0.5s ease; /* 淡出淡入動畫 */
         }
+        
+        /* 隱藏 UI 的專屬 class */
+        .ui-hidden { opacity: 0 !important; pointer-events: none !important; }
 
         .section-title { font-weight: bold; border-bottom: 2px solid #FF007F; margin: 10px 0 5px 0; padding-bottom: 3px; font-size: 14px; }
         .btn { width: 100%; margin-top: 8px; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
@@ -70,8 +71,7 @@
 <body>
 
 <button id="toggle-panel-btn" onclick="togglePanel()">⚙️ 隱藏選單</button>
-
-<button id="exit-view-btn" onclick="toggleViewMode(false)">👁️ 結束截圖展示模式</button>
+<button id="exit-view-btn" onclick="toggleViewMode(false)">👁️ 點擊結束截圖模式</button>
 
 <div id="control-panel">
     <div class="section-title">📅 1. 紀錄日期與名稱</div>
@@ -146,30 +146,49 @@
         }
     };
 
-    // ★ 截圖模式邏輯 (隱藏所有干擾元素)
+    // ★ 截圖模式自動隱藏 UI 邏輯
+    let isScreenshotMode = false;
+    let hideUITimer;
+    
+    function resetUITimer() {
+        if (!isScreenshotMode) return;
+        const exitBtn = document.getElementById('exit-view-btn');
+        exitBtn.classList.remove('ui-hidden'); // 顯示按鈕
+        
+        clearTimeout(hideUITimer);
+        hideUITimer = setTimeout(() => {
+            exitBtn.classList.add('ui-hidden'); // 2.5秒後透明化
+        }, 2500);
+    }
+
     window.toggleViewMode = function(isView) {
         const panel = document.getElementById('control-panel');
         const toggleBtn = document.getElementById('toggle-panel-btn');
         const exitBtn = document.getElementById('exit-view-btn');
         const routingUI = document.querySelector('.leaflet-routing-container');
+        const zoomUI = document.querySelector('.leaflet-control-zoom'); // 抓取縮放按鈕
+
+        isScreenshotMode = isView;
 
         if (isView) {
             panel.classList.add('panel-hidden');
             toggleBtn.style.display = 'none';
             exitBtn.style.display = 'block';
-            if(routingUI) routingUI.style.display = 'none'; // 隱藏紅線的文字導航框
+            if(routingUI) routingUI.style.display = 'none';
+            if(zoomUI) zoomUI.style.display = 'none'; // 隱藏縮放按鈕
+            resetUITimer(); // 啟動倒數隱藏計時器
         } else {
             if(isPanelOpen) panel.classList.remove('panel-hidden');
             toggleBtn.style.display = 'block';
             exitBtn.style.display = 'none';
+            exitBtn.classList.remove('ui-hidden'); 
             if(routingUI) routingUI.style.display = 'block';
+            if(zoomUI) zoomUI.style.display = 'block'; // 恢復縮放按鈕
+            clearTimeout(hideUITimer);
         }
     };
 
-    // 如果畫面寬度小於 600px (手機)，預設收起選單
-    if (window.innerWidth < 600) {
-        togglePanel();
-    }
+    if (window.innerWidth < 600) { togglePanel(); }
 
     const wardrobeDiv = document.getElementById('wardrobe');
     initialImages.forEach((url, i) => {
@@ -190,9 +209,12 @@
     });
 
     document.getElementById('recordDate').valueAsDate = new Date();
-    const map = L.map('map', {zoomControl: false}).setView([24.9930, 121.4960], 15); // 手機版將 zoom 移至右下較不擋
+    const map = L.map('map', {zoomControl: false}).setView([24.9930, 121.4960], 15); 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    
+    // ★ 綁定觸控與滑鼠事件，只要動地圖就會喚醒「結束截圖」按鈕
+    map.on('mousemove touchstart click', resetUITimer);
 
     const routing = L.Routing.control({
         waypoints: [],
