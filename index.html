@@ -2,47 +2,65 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中和軌跡地圖 - 命名與高亮防呆版 🗺️</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中和軌跡地圖 - 手機響應截圖版 📱</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <style>
-        body { margin: 0; padding: 0; font-family: sans-serif; background: #f4f4f4; }
+        body { margin: 0; padding: 0; font-family: sans-serif; background: #f4f4f4; overflow: hidden; }
         #map { width: 100vw; height: 100vh; } 
-        #control-panel {
-            position: absolute; top: 10px; right: 10px; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 300px; max-height: 90vh; overflow-y: auto;
+        
+        /* ★ 手機適應與收折按鈕 */
+        #toggle-panel-btn {
+            position: absolute; top: 15px; right: 15px; z-index: 2000;
+            background: #0078FF; color: white; padding: 10px 15px; border: none; border-radius: 8px;
+            font-weight: bold; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.3); transition: 0.2s;
         }
+        #toggle-panel-btn:hover { background: #0056b3; }
+
+        /* 核心控制面板 */
+        #control-panel {
+            position: absolute; top: 60px; right: 15px; z-index: 1000;
+            background: rgba(255, 255, 255, 0.95); padding: 15px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 300px; max-width: 85vw; /* 防止手機超出螢幕 */
+            max-height: calc(100vh - 80px); overflow-y: auto; transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        /* 收折狀態的 CSS */
+        .panel-hidden { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+
+        /* 截圖模式返回按鈕 */
+        #exit-view-btn {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000;
+            background: #FF9800; color: white; padding: 12px 25px; border: none; border-radius: 30px;
+            font-weight: bold; cursor: pointer; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
         .section-title { font-weight: bold; border-bottom: 2px solid #FF007F; margin: 10px 0 5px 0; padding-bottom: 3px; font-size: 14px; }
         .btn { width: 100%; margin-top: 8px; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
         .btn-green { background: #00C851; } .btn-green:hover { background: #007E33; }
         .btn-red { background: #ff4444; } .btn-red:hover { background: #CC0000; }
+        .btn-purple { background: #9C27B0; } .btn-purple:hover { background: #7B1FA2; }
         
-        /* 表單輸入框 */
         .input-box { width: 93%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 5px; font-size: 13px; }
         
-        /* 衣櫥設定 */
         .wardrobe-selector { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0 10px 0; background: white; padding: 5px; border-radius: 5px; }
         .wardrobe-item { width: 40px; height: 40px; cursor: pointer; border: 2px solid transparent; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #555; background: #eee; }
         .wardrobe-item.selected { border-color: #FF007F; background: #ffe6f0; }
         .wardrobe-item img { width: 100%; height: 100%; object-fit: contain; }
         
-        /* 歷史清單設定 */
-        .date-list { background: #fff; padding: 5px; border-radius: 5px; font-size: 13px; max-height: 250px; overflow-y: auto; border: 1px solid #ccc; }
+        .date-list { background: #fff; padding: 5px; border-radius: 5px; font-size: 13px; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; }
         .date-group { margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .date-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #f9f9f9; padding: 5px; border-radius: 4px; }
         .date-header:hover { background: #eee; }
         .route-details { padding: 5px 10px; background: #fafafa; margin-top: 2px; border-left: 3px solid #FF007F; }
         
-        /* 路線項目互動設定 */
         .route-item { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; color: #555; padding: 4px; border-radius: 4px; transition: 0.2s; }
-        .route-item:hover { background: #e3f2fd; } /* 滑鼠移過去變微藍色 */
+        .route-item:hover { background: #e3f2fd; } 
         .route-name { cursor: pointer; flex-grow: 1; font-weight: bold; color: #0078FF; }
         .route-name:hover { text-decoration: underline; }
         
         .del-btn { color: white; background: #ff4444; border: none; border-radius: 3px; cursor: pointer; padding: 2px 5px; font-size: 12px; margin-left: 5px; }
-        .del-btn:hover { background: #CC0000; }
         
         .custom-icon { background: transparent; border: none; }
         .bouncing { animation: bounce 1.5s infinite alternate; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); text-align: center; }
@@ -51,14 +69,18 @@
 </head>
 <body>
 
+<button id="toggle-panel-btn" onclick="togglePanel()">⚙️ 隱藏選單</button>
+
+<button id="exit-view-btn" onclick="toggleViewMode(false)">👁️ 結束截圖展示模式</button>
+
 <div id="control-panel">
     <div class="section-title">📅 1. 紀錄日期與名稱</div>
     <input type="date" id="recordDate" class="input-box">
-    <input type="text" id="routeName" class="input-box" placeholder="幫這段路線取個名字 (例如: 去買宵夜)">
+    <input type="text" id="routeName" class="input-box" placeholder="幫這段路線命名 (例: 夜跑)">
 
-    <div class="section-title">👗 2. 選圖示與密度</div>
+    <div class="section-title">👗 2. 圖示與密度 (點擊選擇)</div>
     <div class="wardrobe-selector" id="wardrobe"></div>
-	<div style="font-size: 12px; margin-bottom: 5px; color:#555;">
+    <div style="font-size: 12px; margin-bottom: 5px; color:#555;">
         放置密度：
         <select id="densityInput" style="padding: 2px;">
             <option value="50">50 公尺</option>
@@ -75,8 +97,10 @@
     <button id="sync-btn" class="btn btn-green" onclick="save()">✅ 同步路線到雲端</button>
     <button class="btn btn-red" onclick="clearLine()">🗑️ 清除正在畫的紅線</button>
 
-    <div class="section-title">📚 歷史軌跡管理 <small style="color:#888;">(滑鼠移入可高亮)</small></div>
+    <div class="section-title">📚 歷史軌跡管理</div>
     <div id="history-list" class="date-list">連線中...</div>
+
+    <button class="btn btn-purple" style="margin-top: 15px;" onclick="toggleViewMode(true)">📸 進入純淨截圖模式</button>
 </div>
 
 <div id="map"></div>
@@ -86,7 +110,7 @@
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-    // ★ 請換成你的 GAS Exec 網址
+    // ★ 記得換成你的 GAS Exec 網址
     const gasApiUrl = 'https://script.google.com/macros/s/AKfycbzGDFyCsjJ3JIG0oq00gFYSPg0i9dRYGLNM4Aj0TXtygeKvxmZQ3OZCjQUi-mTjlRVqOw/exec'; 
 
     const initialImages = [
@@ -104,12 +128,49 @@
 
     let selectedImg = initialImages[1]; 
     let allRoutes = [];
-    
-    // ★ 路線圖層管理器：用來控制哪條線要發亮
-    let routeLayersMap = {}; // 格式: { "路線ID": { line: 路線物件, markers: [圖示物件] } }
+    let routeLayersMap = {}; 
     let gridDates = {}; 
 
-    // 初始化衣櫥
+    // ★ 收折面板邏輯
+    let isPanelOpen = true;
+    window.togglePanel = function() {
+        isPanelOpen = !isPanelOpen;
+        const panel = document.getElementById('control-panel');
+        const btn = document.getElementById('toggle-panel-btn');
+        if (isPanelOpen) {
+            panel.classList.remove('panel-hidden');
+            btn.innerText = "⚙️ 隱藏選單";
+        } else {
+            panel.classList.add('panel-hidden');
+            btn.innerText = "⚙️ 打開選單";
+        }
+    };
+
+    // ★ 截圖模式邏輯 (隱藏所有干擾元素)
+    window.toggleViewMode = function(isView) {
+        const panel = document.getElementById('control-panel');
+        const toggleBtn = document.getElementById('toggle-panel-btn');
+        const exitBtn = document.getElementById('exit-view-btn');
+        const routingUI = document.querySelector('.leaflet-routing-container');
+
+        if (isView) {
+            panel.classList.add('panel-hidden');
+            toggleBtn.style.display = 'none';
+            exitBtn.style.display = 'block';
+            if(routingUI) routingUI.style.display = 'none'; // 隱藏紅線的文字導航框
+        } else {
+            if(isPanelOpen) panel.classList.remove('panel-hidden');
+            toggleBtn.style.display = 'block';
+            exitBtn.style.display = 'none';
+            if(routingUI) routingUI.style.display = 'block';
+        }
+    };
+
+    // 如果畫面寬度小於 600px (手機)，預設收起選單
+    if (window.innerWidth < 600) {
+        togglePanel();
+    }
+
     const wardrobeDiv = document.getElementById('wardrobe');
     initialImages.forEach((url, i) => {
         const div = document.createElement('div');
@@ -129,7 +190,8 @@
     });
 
     document.getElementById('recordDate').valueAsDate = new Date();
-    const map = L.map('map').setView([24.9930, 121.4960], 15);
+    const map = L.map('map', {zoomControl: false}).setView([24.9930, 121.4960], 15); // 手機版將 zoom 移至右下較不擋
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     const routing = L.Routing.control({
@@ -153,7 +215,6 @@
         }).catch(() => { document.getElementById('history-list').innerHTML = '讀取失敗'; });
     }
 
-    // ★ 渲染列表：加入 Hover 與 Click 事件
     function renderUI() {
         const container = document.getElementById('history-list');
         if (allRoutes.length === 0) { container.innerHTML = '尚無紀錄'; return; }
@@ -177,14 +238,11 @@
             
             groups[d].forEach((r, idx) => {
                 const densityText = (r.emojiType === 'none') ? '無圖' : `${r.density || 300}m`;
-                // 如果有名字就顯示名字，沒有就顯示 路線1、路線2
                 const routeName = r.name ? r.name : `路線 ${idx + 1}`; 
-                
-                // ★ 綁定滑鼠移入、移出、點擊事件
                 html += `
                     <div class="route-item" onmouseenter="highlightRoute('${r.id}')" onmouseleave="resetHighlight()">
-                        <span class="route-name" onclick="zoomToRoute('${r.id}')" title="點擊飛到路線位置">▶ ${routeName} <small style="color:#888;">(${densityText})</small></span>
-                        <button class="del-btn" onclick="deleteRoute('${r.id}')" title="刪除這段路線">🗑️</button>
+                        <span class="route-name" onclick="zoomToRoute('${r.id}')">▶ ${routeName} <small style="color:#888;">(${densityText})</small></span>
+                        <button class="del-btn" onclick="deleteRoute('${r.id}')">🗑️</button>
                     </div>`;
             });
             html += `</div></div>`;
@@ -199,9 +257,7 @@
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
     };
 
-    // ★ 繪製地圖並將物件存入管理器
     function draw() {
-        // 清空舊圖層
         Object.values(routeLayersMap).forEach(obj => {
             map.removeLayer(obj.line);
             obj.markers.forEach(m => map.removeLayer(m));
@@ -226,13 +282,10 @@
             const dStr = formatD(r.date);
             const routeDensity = r.density || 300; 
             
-            // 繪製紅線
             const line = L.polyline(r.path, {color: '#FF007F', weight: 6, opacity: 0.35}).addTo(map);
-            
-            // 將這條線註冊進去管理器
             routeLayersMap[r.id] = { line: line, markers: [] };
 
-            if (r.emojiType === 'none') return; // 如果是純路線就不放圖
+            if (r.emojiType === 'none') return; 
 
             let dSum = 0;
             for (let i = 0; i < r.path.length; i++) {
@@ -254,35 +307,30 @@
                     });
                     
                     const m = L.marker(p, {icon}).addTo(map).bindPopup(`${r.name || '未命名'} <br> ${dStr} (累積:${daysCount}天)`);
-                    routeLayersMap[r.id].markers.push(m); // 存入管理器
+                    routeLayersMap[r.id].markers.push(m);
                     dSum = 0;
                 }
             }
         });
     }
 
-    // ★ 新功能：高亮顯示路線 (滑鼠移入)
     window.highlightRoute = function(id) {
         Object.keys(routeLayersMap).forEach(key => {
             if (key == id) {
-                // 目標路線發亮、變粗，並提到最上層
                 routeLayersMap[key].line.setStyle({color: '#00FFFF', weight: 8, opacity: 1});
                 routeLayersMap[key].line.bringToFront();
             } else {
-                // 其他路線變灰暗
                 routeLayersMap[key].line.setStyle({color: '#999', weight: 4, opacity: 0.15});
             }
         });
     };
 
-    // ★ 新功能：還原高亮 (滑鼠移出)
     window.resetHighlight = function() {
         Object.keys(routeLayersMap).forEach(key => {
             routeLayersMap[key].line.setStyle({color: '#FF007F', weight: 6, opacity: 0.35});
         });
     };
 
-    // ★ 新功能：點擊自動定位縮放
     window.zoomToRoute = function(id) {
         if (routeLayersMap[id] && routeLayersMap[id].line) {
             map.fitBounds(routeLayersMap[id].line.getBounds(), { padding: [50, 50] });
@@ -297,7 +345,7 @@
 
     function save() {
         const date = document.getElementById('recordDate').value;
-        const name = document.getElementById('routeName').value; // 抓取使用者輸入的名稱
+        const name = document.getElementById('routeName').value; 
         const density = document.getElementById('densityInput').value; 
         
         if (!date || !currentCoords) return alert('請先在地圖上規劃路線');
@@ -309,7 +357,7 @@
             method: 'POST',
             body: JSON.stringify({
                 date: date, 
-                name: name || '未命名路線', // 如果沒輸入，預設名字
+                name: name || '未命名路線', 
                 path: currentCoords, 
                 emojiType: selectedImg,
                 density: density 
@@ -318,7 +366,7 @@
             alert('儲存成功！');
             routing.setWaypoints([]);
             currentCoords = null;
-            document.getElementById('routeName').value = ''; // 清空輸入框
+            document.getElementById('routeName').value = ''; 
             load();
         }).finally(() => {
             btn.disabled = false; btn.innerText = '✅ 同步路線到雲端';
@@ -326,17 +374,14 @@
     }
 
     window.deleteRoute = function(id) {
-        if (!id || id === "undefined") return alert('這是舊版本的紀錄，請直接到 Google 試算表中手動刪除該列。');
-        if (!confirm('確定要刪除這段路線嗎？刪除後無法復原喔！')) return;
+        if (!id || id === "undefined") return alert('舊資料請至 Google 試算表刪除');
+        if (!confirm('確定刪除？無法復原！')) return;
         
         document.getElementById('history-list').innerHTML = '正在刪除...';
-        
         fetch(gasApiUrl, {
             method: 'POST',
             body: JSON.stringify({ action: 'delete', id: id })
-        }).then(() => {
-            load(); 
-        });
+        }).then(() => { load(); });
     };
 
     function clearLine() { routing.setWaypoints([]); currentCoords = null; }
