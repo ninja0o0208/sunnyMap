@@ -26,7 +26,6 @@
         
         .panel-hidden { opacity: 0; transform: translateY(-20px); pointer-events: none; }
 
-        /* 截圖模式返回按鈕 (加入淡出動畫) */
         #exit-view-btn {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 2000;
             background: #FF9800; color: white; padding: 12px 25px; border: none; border-radius: 30px;
@@ -34,7 +33,6 @@
             transition: opacity 0.5s ease;
         }
         
-        /* 隱藏 UI 的專屬 class */
         .ui-hidden { opacity: 0 !important; pointer-events: none !important; }
 
         .section-title { font-weight: bold; border-bottom: 2px solid #FF007F; margin: 10px 0 5px 0; padding-bottom: 3px; font-size: 14px; }
@@ -66,6 +64,22 @@
         .custom-icon { background: transparent; border: none; }
         .bouncing { animation: bounce 1.5s infinite alternate; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); text-align: center; }
         @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+        /* ★ 2. 手機版智慧縮放 (螢幕寬度小於 600px 時自動觸發) */
+        @media (max-width: 600px) {
+            #control-panel { 
+                width: 220px; /* 面板變窄 */
+                padding: 10px; 
+                top: 55px;
+            }
+            .section-title { font-size: 13px; margin: 5px 0; }
+            .input-box { font-size: 12px; padding: 4px; width: 92%; }
+            .btn { padding: 6px; font-size: 12px; margin-top: 5px; }
+            .wardrobe-item { width: 32px; height: 32px; font-size: 10px; } /* 衣櫥縮小 */
+            .date-list { max-height: 160px; font-size: 12px; }
+            #toggle-panel-btn { padding: 6px 10px; font-size: 12px; top: 10px; right: 10px; }
+            div[style*="font-size: 12px"] { font-size: 11px !important; }
+        }
     </style>
 </head>
 <body>
@@ -76,19 +90,29 @@
 <div id="control-panel">
     <div class="section-title">📅 1. 紀錄日期與名稱</div>
     <input type="date" id="recordDate" class="input-box">
-    <input type="text" id="routeName" class="input-box" placeholder="幫這段路線命名 (例: 夜跑)">
+    <input type="text" id="routeName" class="input-box" placeholder="幫這段路線命名 (例: 掃街拜票)">
 
-    <div class="section-title">👗 2. 圖示與密度 (點擊選擇)</div>
+    <div class="section-title">👗 2. 顯示設定</div>
     <div class="wardrobe-selector" id="wardrobe"></div>
-    <div style="font-size: 12px; margin-bottom: 5px; color:#555;">
-        放置密度：
-        <select id="densityInput" style="padding: 2px;">
+    
+    <div style="font-size: 12px; margin-bottom: 5px; color:#555; display: flex; justify-content: space-between; align-items: center;">
+        <span>放置密度：</span>
+        <select id="densityInput" style="padding: 2px; flex-grow: 1; margin-left: 5px;">
             <option value="50">50 公尺</option>
             <option value="100">100 公尺</option>
             <option value="200">200 公尺</option>
             <option value="300" selected>300 公尺 (預設)</option>
             <option value="500">500 公尺</option>
             <option value="1000">1 公里</option>
+        </select>
+    </div>
+    
+    <div style="font-size: 12px; margin-bottom: 5px; color:#555; display: flex; justify-content: space-between; align-items: center;">
+        <span>底圖風格：</span>
+        <select id="mapStyleInput" style="padding: 2px; flex-grow: 1; margin-left: 5px;" onchange="changeMapStyle()">
+            <option value="voyager" selected>彩色清爽 (無干擾推薦)</option>
+            <option value="light">極簡淺色 (凸顯路線)</option>
+            <option value="osm">傳統原版 (細節最多)</option>
         </select>
     </div>
 
@@ -100,7 +124,7 @@
     <div class="section-title">📚 歷史軌跡管理</div>
     <div id="history-list" class="date-list">連線中...</div>
 
-    <button class="btn btn-purple" style="margin-top: 15px;" onclick="toggleViewMode(true)">📸 進入純淨截圖模式</button>
+    <button class="btn btn-purple" style="margin-top: 10px;" onclick="toggleViewMode(true)">📸 截圖模式</button>
 </div>
 
 <div id="map"></div>
@@ -110,7 +134,6 @@
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
 <script>
-    // ★ 記得換成你的 GAS Exec 網址
     const gasApiUrl = 'https://script.google.com/macros/s/AKfycbzGDFyCsjJ3JIG0oq00gFYSPg0i9dRYGLNM4Aj0TXtygeKvxmZQ3OZCjQUi-mTjlRVqOw/exec'; 
 
     const initialImages = [
@@ -131,7 +154,6 @@
     let routeLayersMap = {}; 
     let gridDates = {}; 
 
-    // ★ 收折面板邏輯
     let isPanelOpen = true;
     window.togglePanel = function() {
         isPanelOpen = !isPanelOpen;
@@ -146,7 +168,6 @@
         }
     };
 
-    // ★ 截圖模式自動隱藏 UI 邏輯
     let isScreenshotMode = false;
     let hideUITimer;
     
@@ -209,10 +230,24 @@
     });
 
     document.getElementById('recordDate').valueAsDate = new Date();
+    
     const map = L.map('map', {zoomControl: false}).setView([24.9930, 121.4960], 15); 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     
+    const mapStyles = {
+        osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        voyager: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+    };
+
+    let currentTileLayer = L.tileLayer(mapStyles.voyager, { maxZoom: 19, attribution: '© OpenStreetMap contributors, © CARTO' }).addTo(map);
+
+    window.changeMapStyle = function() {
+        const selectedStyle = document.getElementById('mapStyleInput').value;
+        map.removeLayer(currentTileLayer);
+        currentTileLayer = L.tileLayer(mapStyles[selectedStyle], { maxZoom: 19, attribution: '© OpenStreetMap contributors, © CARTO' }).addTo(map);
+    };
+
     map.on('mousemove touchstart click', resetUITimer);
 
     const routing = L.Routing.control({
@@ -233,7 +268,7 @@
         fetch(gasApiUrl).then(res => res.json()).then(data => {
             allRoutes = Array.isArray(data) ? data : [];
             renderUI();
-        }).catch(() => { document.getElementById('history-list').innerHTML = '讀取失敗'; });
+        }).catch(() => { document.getElementById('history-list').innerHTML = '讀取失敗，請確認 GAS 部署'; });
     }
 
     function renderUI() {
