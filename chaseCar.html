@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🏃‍♀️ 中和超拚 陳怡君｜行程看板</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; padding-bottom: 90px; }
+    .header-box { padding: 25px 15px 15px; text-align: center; background: white; border-bottom: 3px solid #4BC5B4; position: relative; }
+    .logo-img { position: absolute; top: 5px; left: 10px; width: 85px; height: auto; border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,0.15); z-index: 10; }
+    .sub-title { font-size: 0.95rem; font-weight: bold; color: #333; margin-bottom: 2px; margin-left: 0; }
+    .main-title { font-size: 1.5rem; font-weight: 800; color: #4BC5B4; letter-spacing: 1px; margin-left: 0; }
+    .nav-container { overflow-x: auto; white-space: nowrap; padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; }
+    .nav-container::-webkit-scrollbar { display: none; }
+    .nav-pills .nav-link { margin-right: 8px; background: #f1f3f5; color: #495057; font-size: 0.9rem; border-radius: 20px; padding: 8px 18px; border: 1px solid #dee2e6; }
+    .nav-pills .nav-link.active { background: #4BC5B4; color: white; border-color: #4BC5B4; font-weight: bold; box-shadow: 0 2px 4px rgba(75,197,180,0.3); }
+    
+    .volunteer-card { background: #4BC5B4; color: #1d3557; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 6px solid #1d3557; position: relative; box-shadow: 0 4px 10px rgba(75,197,180,0.3); }
+    .v-btn-group { position: absolute; top: 15px; right: 15px; display: flex; flex-direction: column; gap: 8px; }
+    .btn-v-nav, .btn-v-view, .btn-v-addmap { font-weight: 900; font-size: 0.85rem; border-radius: 8px; text-decoration: none; padding: 8px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-align: center; cursor: pointer; border: none; }
+    
+    .btn-v-view { background: #1d3557; color: white; } .btn-v-view:hover { background: #2a4d7c; color: white; }
+    .btn-v-nav { background: #ffffff; color: #1d3557; } .btn-v-nav:hover { background: #f8f9fa; color: #1d3557; }
+    
+    details.task-box { background: rgba(255, 255, 255, 0.6); border-radius: 8px; padding: 10px; margin-top: 15px; font-size: 0.9rem; line-height: 1.4; border-left: 3px solid #1d3557; color: #1d3557; cursor: pointer; }
+    details.task-box summary { list-style: none; outline: none; display: flex; justify-content: space-between; align-items: flex-start; }
+    details.task-box summary::-webkit-details-marker { display: none; }
+    .mission-wrapper { display: flex; align-items: flex-start; flex: 1; padding-right: 5px; }
+    .mission-label { white-space: nowrap; font-weight: bold; }
+    .greeting-hint { color: #1d3557; font-size: 0.85rem; font-weight: bold; white-space: nowrap; margin-left: 5px; padding-top: 1px; }
+    .greeting-hint::after { content: " ▼"; }
+    details.task-box[open] .greeting-hint::after { content: " ▲"; }
+    .task-divider { border-top: 1px dashed rgba(29,53,87,0.3); margin: 10px 0; }
+    .script-tabs { display: flex; border-bottom: 1px solid rgba(29,53,87,0.3); margin-bottom: 10px; }
+    .script-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; color: #1d3557; opacity: 0.6; font-weight: bold; font-size: 0.9rem; border-bottom: 3px solid transparent; }
+    .script-tab.active { opacity: 1; border-bottom: 3px solid #1d3557; color: #1d3557; }
+    .script-content { display: none; text-align: left; }
+    .script-content.active { display: block; }
+    .script-subtitle { color: #1d3557; font-weight: bold; margin-top: 10px; display: block; border-bottom: 1px solid rgba(29,53,87,0.2); padding-bottom: 3px; }
+    
+    .rule-link-btn { display: flex; align-items: center; justify-content: center; background: white; color: #1d3557; border: 1px solid #1d3557; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-bottom: 8px; transition: 0.2s; font-size: 0.95rem;}
+    .rule-link-btn:hover { background: #1d3557; color: white; border-color: #1d3557; }
+
+    .card { border: none; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .activity-name { font-weight: 800; font-size: 1.3rem; color: #4BC5B4; display: block; margin-top: 5px; text-shadow: 0px 0px 1px rgba(0,0,0,0.1);}
+    .location-text { font-size: 1rem; color: #457b9d; font-weight: bold; }
+    .past-event-box { background: #f1f3f5; border-radius: 12px; margin-bottom: 10px; padding: 10px; opacity: 0.7; }
+    .past-event-box summary { font-weight: bold; color: #6c757d; cursor: pointer; outline: none; list-style: none; }
+    .past-event-box summary::-webkit-details-marker { display: none; }
+    .past-event-box summary::before { content: "✅ 已結束："; color: #4BC5B4; }
+    
+    .btn-mini-nav, .btn-mini-view, .btn-mini-addmap { border-radius: 8px; font-size: 0.85rem; padding: 8px 12px; text-decoration: none; font-weight: bold; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; cursor: pointer; border: none; }
+    .btn-mini-view { background: #457b9d; color: white; } 
+    .btn-mini-nav { background: #4BC5B4; color: white; } 
+    .btn-mini-addmap { background: white; color: #1d3557; border: 2px solid #1d3557; padding: 6px 12px; transition: 0.2s;}
+    .btn-mini-addmap.selected { background: #1d3557; color: white; }
+    
+    .card details { background: #f1f8ff; padding: 5px 10px; border-radius: 8px; margin-top: 8px; font-size: 0.85rem; }
+    .card details summary { color: #457b9d; font-weight: bold; cursor: pointer; outline: none; }
+    
+    /* ★ 新增：當0人時隱藏箭頭與取消點擊的樣式 */
+    details.hide-marker summary::-webkit-details-marker { display: none; }
+    details.hide-marker summary { list-style: none; pointer-events: none; }
+
+    .floating-cart { position: fixed; bottom: 0; left: 0; right: 0; background: #1d3557; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 15px rgba(0,0,0,0.3); z-index: 1000; }
+    .cart-btn { background: #ffb703; color: #1d3557; font-weight: bold; border: none; padding: 8px 18px; border-radius: 50px; font-size: 0.95rem; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+    .cart-clear { background: transparent; color: #ccc; border: none; font-size: 0.8rem; text-decoration: underline; padding: 0 10px;}
+    #map-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; flex-direction: column; }
+    #map-header { padding: 15px; background: #4BC5B4; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10001; }
+    #map-container { flex: 1; width: 100%; z-index: 10000; }
+    .custom-map-label { background: white; border: 2px solid #4BC5B4; border-radius: 5px; padding: 4px 8px; font-weight: bold; color: #1d3557; white-space: nowrap; font-size: 0.85rem; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translate(-50%, -100%); cursor: pointer; }
+    .custom-map-label span { color: #4BC5B4; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .leaflet-popup-content { margin: 15px; }
+    .vol-badge { background: #4BC5B4; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; margin-right: 5px; margin-bottom: 5px; display: inline-block; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
+  </style>
+</head>
+<body>
+  <div class="header-box">
+    <img src="https://i.imgur.com/WrOGh9H.png" class="logo-img">
+    <div class="sub-title">中和超拚 陳怡君</div>
+    <div class="main-title" id="main-title-text">載入中...</div>
+  </div>
+  <div class="nav-container sticky-top shadow-sm">
+    <ul class="nav nav-pills flex-nowrap" id="tab-list"><li class="nav-item"><a class="nav-link disabled">載入選單中...</a></li></ul>
+  </div>
+  <div class="container mt-3">
+    <div id="volunteer-area"></div>
+    <div id="content"><div class="text-center p-5"><div class="spinner-border" style="color:#4BC5B4;" role="status"></div></div></div>
+  </div>
+  <div class="floating-cart" id="floating-cart" style="display: none;">
+    <div><span style="font-size: 0.85rem;">已排定</span><br><span id="cart-count" style="font-size: 1.3rem; font-weight: bold; color: #ffb703;">0</span> <span style="font-size: 0.85rem;">個行程</span><button class="cart-clear" onclick="clearCart()">清空</button></div>
+    <button class="cart-btn" onclick="openMapModal()">🗺️ 瀏覽行程分佈</button>
+  </div>
+  <div id="map-modal">
+    <div id="map-header"><span>📍 行程分佈圖</span><button onclick="closeMapModal()" style="background:none; border:none; color:white; font-size:1.5rem; outline:none;">✖</button></div>
+    <div id="map-loading" style="text-align: center; padding: 50px; color: #333; font-weight: bold;"><div class="spinner-border" style="color:#4BC5B4; margin-bottom:10px;"></div><br>正在繪製地圖標記...</div>
+    <div id="map-container"></div>
+  </div>
+
+  <div id="signup-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:10002; justify-content:center; align-items:center; padding:20px;">
+    <div style="background:white; padding:25px; border-radius:12px; width:100%; max-width:400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+      <h4 style="color:#4BC5B4; font-weight:800; margin-bottom:15px; text-align:center;">🙋‍♂️ 志工線上報名</h4>
+      <div style="font-weight:bold; margin-bottom:15px; color:#1d3557; font-size:1.05rem;" id="signup-event-name"></div>
+      <input type="text" id="signup-name" class="form-control mb-3" placeholder="請輸入暱稱 (必填)">
+      <div class="d-flex justify-content-between mt-4">
+        <button class="btn btn-light fw-bold w-100 me-2" onclick="closeSignupModal()">取消</button>
+        <button class="btn fw-bold w-100 ms-2" style="background-color:#1d3557; color:white;" onclick="submitSignup()" id="signup-submit-btn">送出報名</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxWSyX85za2cpMwW7x0sTJvSoR70kcUYNA4__0yum5NTnjyqHinisikifNjgAsSY468Nw/exec";
+
+    let selectedEvents = []; 
+    let leafletMap = null;
+    let currentSheetName = "";
+
+    async function fetchAPI(url) {
+      try { const response = await fetch(url); return await response.json(); } catch (err) { return null; }
+    }
+
+    window.onload = async function() {
+      const initRes = await fetchAPI(API_URL + "?action=getInitData");
+      if(initRes && initRes.names) {
+        document.getElementById('main-title-text').innerText = initRes.globalTitle || "🏃‍♀️ 怡君行程看板 🏃‍♀️";
+        renderTabs(initRes.names);
+        const tabs = document.querySelectorAll('.nav-link');
+        const activeIndex = initRes.names.indexOf(initRes.defaultName);
+        currentSheetName = initRes.defaultName; 
+        if(activeIndex > -1 && tabs[activeIndex]) {
+          tabs[activeIndex].classList.add('active');
+          tabs[activeIndex].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        }
+        renderContentHTML(initRes.data);
+      } else {
+        document.getElementById('content').innerHTML = '<p class="text-center p-5">讀取失敗，請重新整理</p>';
+      }
+    };
+
+    function renderTabs(names) {
+      let html = '';
+      names.forEach((name, index) => {
+        html += `<li class="nav-item"><button class="nav-link" id="tab-${index}" onclick="loadData('${name}', this)">${name}</button></li>`;
+      });
+      document.getElementById('tab-list').innerHTML = html;
+    }
+
+    async function loadData(sheetName, btn) {
+      if(btn) {
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        btn.classList.add('active');
+        btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+      }
+      currentSheetName = sheetName; 
+      document.getElementById('volunteer-area').innerHTML = '';
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border" style="color:#4BC5B4;"></div></div>`;
+      const res = await fetchAPI(API_URL + "?action=getData&sheetName=" + encodeURIComponent(sheetName));
+      if(res.globalTitle) document.getElementById('main-title-text').innerText = res.globalTitle;
+      renderContentHTML(res);
+    }
+
+    function renderContentHTML(res) {
+      if (!res) { document.getElementById('content').innerHTML = '<p class="text-center p-5">無資料</p>'; return; }
+      
+      const nowTime = new Date();
+      const currentMinutes = nowTime.getHours() * 60 + nowTime.getMinutes();
+
+      let isToday = false;
+      let isPastDay = false;
+      let dateMatch = currentSheetName.match(/(\d{1,2})\/(\d{1,2})/);
+      if(dateMatch) {
+        let sMonth = parseInt(dateMatch[1]);
+        let sDay = parseInt(dateMatch[2]);
+        let tMonth = nowTime.getMonth() + 1;
+        let tDay = nowTime.getDate();
+        if (sMonth < tMonth || (sMonth === tMonth && sDay < tDay)) isPastDay = true;
+        else if (sMonth === tMonth && sDay === tDay) isToday = true;
+      } else { isToday = true; }
+
+      if(res.volunteer) {
+        let vQuery = encodeURIComponent(res.volunteer.location);
+        let vNavUrl = `https://www.google.com/maps/dir/?api=1&destination=$${vQuery}`;
+        let vViewUrl = `https://www.google.com/maps/search/?api=1&query=$${vQuery}`;
+        
+        document.getElementById('volunteer-area').innerHTML = `
+          <div class="volunteer-card">
+            <div style="font-size: 0.85rem; font-weight: bold; color: #1d3557;">📢 本時段集合資訊</div>
+            <div style="font-size: 1.25rem; font-weight: bold; margin-top:5px; margin-right: 90px;">⏰ ${res.volunteer.time}</div>
+            <div style="font-size: 1rem; margin-right: 90px; font-weight:bold;">📍 ${res.volunteer.location}</div>
+            <div class="v-btn-group">
+              <a href="${vViewUrl}" target="_blank" class="btn-v-view">📍 看位置</a>
+              <a href="${vNavUrl}" target="_blank" class="btn-v-nav">🛵 導航</a>
+            </div>
+            <details class="task-box">
+              <summary>
+                <div class="mission-wrapper"><span class="mission-label">📋 任務：</span><span>${res.volunteer.task ? res.volunteer.task : '暫無特定任務'}</span></div>
+                <div class="greeting-hint">💡 參考與守則</div>
+              </summary>
+              <div class="task-divider"></div>
+              
+              <div class="script-tabs" style="display:none;">
+                <div class="script-tab" onclick="switchScript('people', this)">與里民</div>
+                <div class="script-tab" onclick="switchScript('chief', this)">與里長</div>
+                <div class="script-tab active" onclick="switchScript('rules', this)">📖 守則</div>
+              </div>
+              <div id="script-people" class="script-content"></div>
+              <div id="script-chief" class="script-content"></div>
+              
+              <div id="script-rules" class="script-content active">
+                <div class="mt-1">
+                  <a href="https://drive.google.com/file/d/1TGchUcbQAeqi4eJSenv1mu3hfJ6r56WK/view?usp=drive_link" target="_blank" class="rule-link-btn">📘 志工守則 (PDF)</a>
+                  <a href="https://drive.google.com/file/d/1NQOlz80eprtgBJYmE5dpi1qqVKPfHejq/view?usp=drive_link" target="_blank" class="rule-link-btn">📙 掃街注意事項 (PDF)</a>
+                  <a href="https://drive.google.com/file/d/1bgSWAnEDg16ugnwsH26X7ZzvnkuvgN8m/view?usp=drive_link" target="_blank" class="rule-link-btn">📸 志工拍照建議 (PDF)</a>
+                </div>
+              </div>
+            </details>
+          </div>`;
+      }
+
+      let html = '';
+      if(res.list && res.list.length > 0) {
+        res.list.forEach(item => {
+          let query = encodeURIComponent(item.address ? item.address : item.location);
+          let navUrl = `https://www.google.com/maps/dir/?api=1&destination=$${query}`;
+          let viewUrl = `https://www.google.com/maps/search/?api=1&query=$${query}`;
+          let itemStr = encodeURIComponent(JSON.stringify(item)).replace(/'/g, "%27");
+          let isSelected = selectedEvents.some(e => e.id === item.id);
+          let btnClass = isSelected ? "btn-mini-addmap selected" : "btn-mini-addmap";
+          let btnText = isSelected ? "✅ 已加地圖" : "➕ 加到地圖";
+
+          let formattedChief = item.chief ? String(item.chief).replace(/里長/g, '').trim().replace('里', '里 ').replace(/\s+/g, ' ') : "";
+          
+          let isPast = false;
+          if (item.foldState === 'FOLD') {
+            isPast = true;
+          } else if (item.foldState === 'OPEN') {
+            isPast = false;
+          } else {
+            if (isPastDay) isPast = true;
+            else if (isToday) {
+                let timeMatch = item.time.match(/(\d{1,2}):(\d{2})/);
+                if(timeMatch) { 
+                  let eventMinutes = parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]);
+                  if(eventMinutes + 120 < currentMinutes) isPast = true; 
+                }
+            }
+          }
+
+          let cardHtml = `
+            <div class="card p-3" style="${isPast ? 'box-shadow:none; border: 1px solid #ddd;' : ''}">
+              <div class="d-flex justify-content-between align-items-start">
+                <div style="flex: 1; padding-right:10px;">
+                  <div class="d-flex align-items-start" style="margin-bottom: 2px;">
+                    <div style="color:#1d3557; font-weight:bold; font-size:0.95rem; white-space:nowrap;">🕒 ${item.time}</div>
+                    <div style="color:#457b9d; margin-left:8px; font-weight:bold; font-size:0.9rem; line-height:1.4;">${formattedChief ? `| 👤 ${formattedChief}` : ''}</div>
+                  </div>
+                  <div class="activity-name">${item.emoji} ${item.name}</div>
+                  <div class="location-text">📍 ${item.location}</div>
+                  <div class="text-muted small">${item.address}</div>
+                </div>
+                <div class="ms-2 d-flex flex-column gap-2" style="min-width: 80px;">
+                  <a href="${viewUrl}" target="_blank" class="btn-mini-view">📍 看位置</a>
+                  <a href="${navUrl}" target="_blank" class="btn-mini-nav">🛵 導航</a>
+                  <button class="${btnClass}" id="btn-cart-${item.id}" onclick="toggleCart('${itemStr}', this)">${btnText}</button>
+                </div>
+              </div>
+              
+              <details class="mt-2 vol-details-box" open>
+                <summary style="color:#457b9d; font-weight:bold; font-size:0.85rem; outline:none; cursor:pointer;" class="vol-summary-title">👥 志工名單</summary>
+                <div class="vol-content-area" style="padding-top:8px; border-top:1px dashed #ccc; margin-top:5px; font-size:0.85rem;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="vol-list-container" data-event-name="${item.name}" style="flex:1; padding-right:5px; line-height:1.6;">
+                      <span class="spinner-border spinner-border-sm text-muted"></span>
+                    </div>
+                    <button class="signup-btn" style="background:#FF6B81; color:white; border:none; padding:6px 12px; border-radius:8px; font-weight:bold; white-space:nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">載入中</button>
+                  </div>
+                </div>
+              </details>
+            </div>`;
+
+          html += isPast ? `<details class="past-event-box" ${item.foldState === 'OPEN' ? 'open' : ''}><summary>${item.time} ${item.name}</summary><div class="mt-2">${cardHtml}</div></details>` : cardHtml;
+        });
+      } else { html = '<p class="text-center p-5 text-muted">本時段暫無排定行程</p>'; }
+      
+      document.getElementById('content').innerHTML = html;
+      updateCartUI();
+      fetchVolunteersData();
+    }
+
+    async function fetchVolunteersData() {
+      const resData = await fetchAPI(API_URL + "?action=getVolunteers");
+      if(resData) {
+        let vMap = resData.volunteers || {};
+        let lMap = resData.limits || {};
+
+        document.querySelectorAll('.vol-list-container').forEach(container => {
+          let evtName = container.getAttribute('data-event-name');
+          let count = vMap[evtName] ? vMap[evtName].length : 0;
+          let limit = lMap.hasOwnProperty(evtName) ? lMap[evtName] : 3; 
+
+          let detailsBox = container.closest('details');
+          let summaryTitle = detailsBox ? detailsBox.querySelector('.vol-summary-title') : null;
+          let contentArea = detailsBox ? detailsBox.querySelector('.vol-content-area') : null;
+
+          // ★ 完美收折機制：如果上限是 0，隱藏內容，文字改為「🏃‍♀️ 幸福怡起拚」
+          if (limit === 0) {
+            if (detailsBox) {
+                detailsBox.removeAttribute('open'); // 強制收起
+                detailsBox.classList.add('hide-marker'); // 隱藏箭頭與點擊效果
+            }
+            if (summaryTitle) {
+                summaryTitle.innerText = '🏃‍♀️ 幸福怡起拚';
+            }
+            if (contentArea) {
+                contentArea.style.display = 'none'; // 隱藏名單內容
+            }
+          } else {
+            // ★ 恢復正常顯示
+            if (detailsBox) {
+                detailsBox.setAttribute('open', ''); // 展開
+                detailsBox.classList.remove('hide-marker'); // 恢復箭頭
+            }
+            if (summaryTitle) {
+                summaryTitle.innerText = `👥 志工名單 (上限${limit}人)`;
+            }
+            if (contentArea) {
+                contentArea.style.display = 'block'; 
+            }
+
+            if (count > 0) {
+              let badgesHtml = vMap[evtName].map(name => `<span class="vol-badge">👤 ${name}</span>`).join('');
+              container.innerHTML = badgesHtml;
+            } else {
+              container.innerHTML = '<span class="text-muted" style="font-weight:bold;">目前暫無志工報名</span>';
+            }
+
+            let btn = container.parentElement.querySelector('.signup-btn');
+            if (btn) {
+              if (count >= limit) {
+                btn.innerText = "已額滿";
+                btn.style.background = "#6c757d"; 
+                btn.style.color = "white";
+                btn.disabled = true;
+                btn.onclick = null;
+                btn.style.boxShadow = "none";
+              } else {
+                btn.innerText = "🙋‍♂️ 點我報名志工";
+                btn.style.background = "#FF6B81"; 
+                btn.style.color = "white";
+                btn.disabled = false;
+                btn.setAttribute('onclick', `openSignupModal('${evtName}')`);
+                btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.15)";
+              }
+            }
+          }
+        });
+      }
+    }
+
+    let currentSignupEvent = "";
+    function openSignupModal(eventName) {
+      currentSignupEvent = eventName;
+      document.getElementById('signup-event-name').innerText = "報名場次：" + eventName;
+      document.getElementById('signup-modal').style.display = "flex";
+    }
+    
+    function closeSignupModal() {
+      document.getElementById('signup-modal').style.display = "none";
+      document.getElementById('signup-name').value = "";
+    }
+    
+    async function submitSignup() {
+      let name = document.getElementById('signup-name').value.trim();
+      if(!name) { alert("請輸入暱稱！"); return; }
+
+      let btn = document.getElementById('signup-submit-btn');
+      btn.innerText = "報名中..."; btn.disabled = true;
+
+      let url = API_URL + "?action=addVolunteer&eventName=" + encodeURIComponent(currentSignupEvent)
+                + "&volName=" + encodeURIComponent(name);
+      let res = await fetchAPI(url);
+      
+      btn.innerText = "送出報名"; btn.disabled = false;
+      if(res && res.success) {
+        alert("🎉 報名成功！感謝您的參與！");
+        closeSignupModal();
+        fetchVolunteersData();
+      } else {
+        alert(res && res.error ? res.error : "報名失敗，請稍後再試。");
+      }
+    }
+
+    function switchScript(type, btn) { event.preventDefault(); event.stopPropagation(); document.querySelectorAll('.script-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.script-content').forEach(c => c.classList.remove('active')); document.getElementById('script-' + type).classList.add('active'); }
+    function toggleCart(itemJsonStr, btnEl) { let item = JSON.parse(decodeURIComponent(itemJsonStr)); let index = selectedEvents.findIndex(e => e.id === item.id); if (index > -1) { selectedEvents.splice(index, 1); btnEl.classList.remove('selected'); btnEl.innerText = "➕ 加到地圖"; } else { selectedEvents.push(item); btnEl.classList.add('selected'); btnEl.innerText = "✅ 已加地圖"; } updateCartUI(); }
+    function clearCart() { selectedEvents = []; document.querySelectorAll('.btn-mini-addmap').forEach(btn => { btn.classList.remove('selected'); btn.innerText = "➕ 加到地圖"; }); updateCartUI(); }
+    function updateCartUI() { const cartBar = document.getElementById('floating-cart'); const countSpan = document.getElementById('cart-count'); countSpan.innerText = selectedEvents.length; cartBar.style.display = selectedEvents.length > 0 ? "flex" : "none"; }
+    async function openMapModal() { document.getElementById('map-modal').style.display = "flex"; document.getElementById('map-container').style.display = "none"; document.getElementById('map-loading').style.display = "block"; let mapData = selectedEvents.map(e => ({id: e.id, location: e.location, address: e.address, time: e.time, name: e.name, chief: e.chief, emoji: e.emoji})); let url = API_URL + "?action=getGeocodes&data=" + encodeURIComponent(JSON.stringify(mapData)); const geoData = await fetchAPI(url); if(geoData) renderMap(geoData); }
+    function closeMapModal() { document.getElementById('map-modal').style.display = "none"; }
+    function renderMap(geoData) {
+      document.getElementById('map-loading').style.display = "none"; document.getElementById('map-container').style.display = "block";
+      if (leafletMap !== null) leafletMap.remove();
+      leafletMap = L.map('map-container').setView([25.0, 121.5], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(leafletMap);
+      let bounds = [];
+      geoData.forEach(pt => {
+        if (!pt.error && pt.lat && pt.lng) {
+          let shortName = pt.name.length > 4 ? pt.name.substring(0, 4) + '...' : pt.name;
+          let customIcon = L.divIcon({ className: 'custom-map-label', html: `<span>${pt.time}</span> ${pt.emoji} ${shortName}`, iconSize: [null, null] });
+          let marker = L.marker([pt.lat, pt.lng], {icon: customIcon}).addTo(leafletMap);
+          let formattedChief = pt.chief ? String(pt.chief).replace(/里長/g, '').trim().replace('里', '里 ').replace(/\s+/g, ' ') : "";
+          let chiefHeaderHtml = formattedChief ? `<span style="color:#1d3557; margin-left: 8px;">| 👤 ${formattedChief}</span>` : "";
+          marker.bindPopup(`<div style="font-size:1.1rem; font-weight:bold; color:#e63946; margin-bottom:5px;">🕒 ${pt.time} ${chiefHeaderHtml}</div><div style="font-size:1rem; font-weight:bold; color:#1d3557; line-height:1.4;">${pt.emoji} ${pt.name}</div>`);
+          bounds.push([pt.lat, pt.lng]);
+        }
+      });
+      if (bounds.length > 0) leafletMap.fitBounds(bounds, { padding: [50, 50] });
+    }
+  </script>
+</body>
+</html>

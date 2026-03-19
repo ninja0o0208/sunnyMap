@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🩵 中和怡君行程｜核心控制台</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; padding-bottom: 90px; }
+    .header-box { padding: 25px 15px 15px; text-align: center; background: #1d3557; border-bottom: 3px solid #ffb703; position: relative; } 
+    .logo-img { position: absolute; top: 5px; left: 10px; width: 85px; height: auto; border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,0.15); z-index: 10; }
+    .sub-title { font-size: 0.95rem; font-weight: bold; color: #fff; margin-bottom: 2px; margin-left: 0; }
+    .main-title { font-size: 1.5rem; font-weight: 800; color: #ffb703; letter-spacing: 1px; margin-left: 0; }
+    
+    .nav-container { overflow-x: auto; white-space: nowrap; padding: 10px 15px 5px; background: #fff; display: flex; align-items: center;}
+    .nav-container::-webkit-scrollbar { display: none; }
+    .nav-pills .nav-link { margin-right: 8px; background: #f1f3f5; color: #495057; font-size: 0.9rem; border-radius: 20px; padding: 8px 18px; border: 1px solid #dee2e6; }
+    .nav-pills .nav-link.active { background: #4BC5B4; color: white; border-color: #4BC5B4; font-weight: bold; box-shadow: 0 2px 4px rgba(75,197,180,0.3); }
+    
+    .tab-controls-bar { background: #fff; padding: 5px 15px 10px; border-bottom: 1px solid #ddd; display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+    .tab-ctrl-btn { background: #f8f9fa; border: 1px solid #ced4da; padding: 4px 10px; border-radius: 5px; font-size: 0.75rem; font-weight: bold; color: #495057; cursor: pointer; }
+    .tab-ctrl-btn:hover { background: #e2e6ea; }
+
+    .volunteer-card { background: #4BC5B4; color: #1d3557; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 6px solid #1d3557; position: relative; box-shadow: 0 4px 10px rgba(75,197,180,0.3); }
+    .v-btn-group { position: absolute; top: 15px; right: 15px; display: flex; flex-direction: column; gap: 8px; }
+    .btn-v-nav, .btn-v-view, .btn-v-addmap { font-weight: 900; font-size: 0.85rem; border-radius: 8px; text-decoration: none; padding: 8px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-align: center; cursor: pointer; border: none; }
+    
+    .btn-v-view { background: #1d3557; color: white;} .btn-v-view:hover { background: #2a4d7c; color: white; }
+    .btn-v-nav { background: #ffffff; color: #1d3557;} .btn-v-nav:hover { background: #f8f9fa; color: #1d3557; }
+    
+    details.task-box { background: rgba(255, 255, 255, 0.6); border-radius: 8px; padding: 10px; margin-top: 15px; font-size: 0.9rem; line-height: 1.4; border-left: 3px solid #1d3557; color: #1d3557; cursor: pointer; }
+    details.task-box summary { list-style: none; outline: none; display: flex; justify-content: space-between; align-items: flex-start; }
+    details.task-box summary::-webkit-details-marker { display: none; }
+    .mission-wrapper { display: flex; align-items: flex-start; flex: 1; padding-right: 5px; }
+    .mission-label { white-space: nowrap; font-weight: bold; }
+    .greeting-hint { color: #1d3557; font-size: 0.85rem; font-weight: bold; white-space: nowrap; margin-left: 5px; padding-top: 1px; }
+    .greeting-hint::after { content: " ▼"; }
+    details.task-box[open] .greeting-hint::after { content: " ▲"; }
+    .task-divider { border-top: 1px dashed rgba(29,53,87,0.3); margin: 10px 0; }
+    .script-tabs { display: flex; border-bottom: 1px solid rgba(29,53,87,0.3); margin-bottom: 10px; }
+    .script-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; color: #1d3557; opacity: 0.6; font-weight: bold; font-size: 0.9rem; border-bottom: 3px solid transparent; }
+    .script-tab.active { opacity: 1; border-bottom: 3px solid #1d3557; color: #1d3557; }
+    .script-content { display: none; text-align: left; }
+    .script-content.active { display: block; }
+    .script-subtitle { color: #1d3557; font-weight: bold; margin-top: 10px; display: block; border-bottom: 1px solid rgba(29,53,87,0.2); padding-bottom: 3px; }
+    
+    .rule-link-btn { display: flex; align-items: center; justify-content: center; background: white; color: #1d3557; border: 1px solid #1d3557; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-bottom: 8px; transition: 0.2s; font-size: 0.95rem;}
+    .rule-link-btn:hover { background: #1d3557; color: white; border-color: #1d3557; }
+
+    .card { border: none; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .activity-name { font-weight: 800; font-size: 1.3rem; color: #4BC5B4; display: block; margin-top: 5px; text-shadow: 0px 0px 1px rgba(0,0,0,0.1);}
+    .location-text { font-size: 1rem; color: #457b9d; font-weight: bold; }
+    .past-event-box { background: #f1f3f5; border-radius: 12px; margin-bottom: 10px; padding: 10px; opacity: 0.7; border: 2px dashed #ccc; }
+    .past-event-box summary { font-weight: bold; color: #6c757d; cursor: pointer; outline: none; list-style: none; }
+    .past-event-box summary::-webkit-details-marker { display: none; }
+    .past-event-box summary::before { content: "✅ 已結束："; color: #4BC5B4; }
+    .btn-mini-nav, .btn-mini-view, .btn-mini-addmap { border-radius: 8px; font-size: 0.85rem; padding: 8px 12px; text-decoration: none; font-weight: bold; display: block; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; cursor: pointer; border: none; }
+    .btn-mini-view { background: #457b9d; color: white; } 
+    .btn-mini-nav { background: #4BC5B4; color: white; } 
+    .btn-mini-addmap { background: white; color: #e63946; border: 2px solid #e63946; padding: 6px 12px; transition: 0.2s;}
+    .btn-mini-addmap.selected { background: #e63946; color: white; }
+    .card details { background: #f1f8ff; padding: 5px 10px; border-radius: 8px; margin-top: 8px; font-size: 0.85rem; }
+    .card details summary { color: #457b9d; font-weight: bold; cursor: pointer; outline: none; }
+    
+    .floating-cart { position: fixed; bottom: 0; left: 0; right: 0; background: #1d3557; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 15px rgba(0,0,0,0.3); z-index: 1000; }
+    .cart-btn { background: #ffb703; color: #1d3557; font-weight: bold; border: none; padding: 8px 18px; border-radius: 50px; font-size: 0.95rem; box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+    .cart-clear { background: transparent; color: #ccc; border: none; font-size: 0.8rem; text-decoration: underline; padding: 0 10px;}
+    #map-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); z-index: 9999; flex-direction: column; }
+    #map-header { padding: 15px; background: #4BC5B4; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10001; }
+    #map-container { flex: 1; width: 100%; z-index: 10000; }
+    .custom-map-label { background: white; border: 2px solid #4BC5B4; border-radius: 5px; padding: 4px 8px; font-weight: bold; color: #1d3557; white-space: nowrap; font-size: 0.85rem; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transform: translate(-50%, -100%); cursor: pointer; }
+    .custom-map-label span { color: #4BC5B4; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .leaflet-popup-content { margin: 15px; }
+    .edit-input { width: 100%; margin-bottom: 5px; padding: 5px; border-radius: 5px; border: none; font-size: 0.95rem; border: 1px solid #ccc; }
+
+    .vol-badge { background: #4BC5B4; color: white; padding: 4px 8px; border-radius: 20px; font-size: 0.85rem; margin-right: 5px; margin-bottom: 5px; display: inline-block; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
+    .delete-vol-btn { cursor: pointer; background: white; color: #e63946; border-radius: 50%; padding: 0px 5px; margin-left: 6px; font-size: 0.75rem; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+    .admin-controls { background: #e9ecef; border-radius: 8px; padding: 8px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #dee2e6; }
+    .admin-btn { background: white; border: 1px solid #adb5bd; border-radius: 5px; padding: 4px 8px; font-size: 0.85rem; cursor: pointer; font-weight: bold; color: #495057; }
+    .admin-btn:hover { background: #dee2e6; }
+    .status-btn-FOLD { background: #6c757d; color: white; border: none; }
+    .status-btn-OPEN { background: #28a745; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <div class="header-box">
+    <img src="https://i.imgur.com/WrOGh9H.png" class="logo-img">
+    <div class="sub-title">核心專用管理後台</div>
+    <div class="main-title">🛠️ 核心控制台 🛠️</div>
+  </div>
+  
+  <div class="nav-container sticky-top shadow-sm" style="padding-bottom:5px;">
+    <ul class="nav nav-pills flex-nowrap" id="tab-list" style="flex:1;"><li class="nav-item"><a class="nav-link disabled">載入選單中...</a></li></ul>
+  </div>
+  
+  <div class="tab-controls-bar" id="tab-controls" style="display:none;">
+    <span style="margin-right:auto; color:#6c757d; font-size:0.8rem; font-weight:bold;">📍 標籤管理：</span>
+    <button class="tab-ctrl-btn" onclick="moveCurrentSheet('left')">⬅️ 左移</button>
+    <button class="tab-ctrl-btn" onclick="moveCurrentSheet('right')">➡️ 右移</button>
+    <button class="tab-ctrl-btn" style="color:#0d6efd;" onclick="renameCurrentSheet()">✏️ 改名</button>
+    <button class="tab-ctrl-btn" style="color:#dc3545;" onclick="deleteCurrentSheet()">🗑️ 刪除</button>
+  </div>
+
+  <div class="container mt-3">
+    <div id="volunteer-area"></div>
+    <div id="content"><div class="text-center p-5"><div class="spinner-border" style="color:#4BC5B4;" role="status"></div></div></div>
+    
+    <div style="text-align:center; padding: 10px 0 30px 0;">
+      <button onclick="openAddEventModal()" style="background:#1d3557; color:#ffb703; font-weight:bold; padding:10px 30px; border-radius:30px; border:none; font-size:1.1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">➕ 新增一筆活動</button>
+    </div>
+  </div>
+
+  <div class="floating-cart" id="floating-cart" style="display: none;">
+    <div><span style="font-size: 0.85rem;">已排定</span><br><span id="cart-count" style="font-size: 1.3rem; font-weight: bold; color: #ffb703;">0</span> <span style="font-size: 0.85rem;">個行程</span><button class="cart-clear" onclick="clearCart()">清空</button></div>
+    <button class="cart-btn" onclick="openMapModal()">🗺️ 瀏覽行程分佈</button>
+  </div>
+  
+  <div id="map-modal">
+    <div id="map-header"><span>📍 行程分佈圖</span><button onclick="closeMapModal()" style="background:none; border:none; color:white; font-size:1.5rem; outline:none;">✖</button></div>
+    <div id="map-loading" style="text-align: center; padding: 50px; color: #333; font-weight: bold;"><div class="spinner-border" style="color:#4BC5B4; margin-bottom:10px;"></div><br>正在繪製地圖標記...</div>
+    <div id="map-container"></div>
+  </div>
+
+  <div id="add-event-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:10002; justify-content:center; align-items:center; padding:20px;">
+    <div style="background:white; padding:20px; border-radius:12px; width:100%; max-width:400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height:90vh; overflow-y:auto;">
+      <h4 style="color:#1d3557; font-weight:800; border-bottom:2px solid #ffb703; padding-bottom:10px; margin-bottom:15px;">➕ 新增活動至本頁</h4>
+      
+      <div class="input-group mb-2">
+        <select id="add-evt-emoji" class="form-select" style="flex: 0 0 105px; font-size:1.1rem; text-align:center;">
+          <option value="🏃‍♀️">🏃‍♀️ 預設</option>
+          <option value="☀️">☀️ 太陽</option>
+          <option value="🩵">🩵 愛心</option>
+          <option value="🌻">🌻 向日葵</option>
+          <option value="💪">💪 拚戰</option>
+          <option value="🔥">🔥 熱血</option>
+          <option value="📢">📢 宣講</option>
+          <option value="🤝">🤝 懇託</option>
+          <option value="🏮">🏮 元宵</option>
+          <option value="🐉">🐉 龍舟</option>
+          <option value="🥟">🥟 水餃</option>
+          <option value="🌕">🌕 中秋</option>
+          <option value="🐰">🐰 玉兔</option>
+          <option value="🧧">🧧 新年</option>
+          <option value="🧨">🧨 開工</option>
+          <option value="🎤">🎤 致詞</option>
+          <option value="🍻">🍻 餐會</option>
+          <option value="💬">💬 聊天</option>
+          <option value="🎥">🎥 錄影</option>
+        </select>
+        <input type="text" id="add-evt-name" class="form-control" placeholder="活動名稱 (必填)">
+      </div>
+
+      <input type="text" id="add-evt-time" class="form-control mb-2" placeholder="時間 (必填，例如: 18:00)">
+      <input type="text" id="add-evt-loc" class="form-control mb-2" placeholder="地點名稱 (例如: 廣濟宮)">
+      <input type="text" id="add-evt-addr" class="form-control mb-2" placeholder="詳細地址 (供地圖導航用)">
+      <input type="text" id="add-evt-chief" class="form-control mb-2" placeholder="里長姓名 (例如: 蘇俊琦)">
+      <input type="text" id="add-evt-phone" class="form-control mb-2" placeholder="里長電話">
+      <input type="number" id="add-evt-people" class="form-control mb-3" placeholder="預估人數">
+      
+      <div class="d-flex justify-content-between mt-3">
+        <button class="btn btn-secondary fw-bold w-100 me-2" onclick="closeAddEventModal()">取消</button>
+        <button class="btn btn-primary fw-bold w-100 ms-2" onclick="submitAddEvent()" id="submit-add-btn">儲存新增</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxWSyX85za2cpMwW7x0sTJvSoR70kcUYNA4__0yum5NTnjyqHinisikifNjgAsSY468Nw/exec";
+
+    let selectedEvents = []; 
+    let leafletMap = null;
+    let currentSheetName = "";
+    let globalTitleVar = "";
+
+    async function fetchAPI(url) {
+      try { const response = await fetch(url); return await response.json(); } catch (err) { return null; }
+    }
+
+    window.onload = async function() {
+      const initRes = await fetchAPI(API_URL + "?action=getInitData");
+      if(initRes && initRes.names) {
+        globalTitleVar = initRes.globalTitle || "🏃‍♀️ 怡君行程看板 🏃‍♀️";
+        renderTabs(initRes.names);
+        const tabs = document.querySelectorAll('.nav-link');
+        const activeIndex = initRes.names.indexOf(initRes.defaultName);
+        currentSheetName = initRes.defaultName;
+        if(activeIndex > -1 && tabs[activeIndex]) {
+          tabs[activeIndex].classList.add('active');
+          tabs[activeIndex].scrollIntoView({ behavior: 'smooth', inline: 'center' });
+        }
+        renderContentHTML(initRes.data);
+      }
+    };
+
+    function renderTabs(names) {
+      let html = '';
+      names.forEach((name, index) => {
+        html += `<li class="nav-item"><button class="nav-link" id="tab-${index}" onclick="loadData('${name}', this)">${name}</button></li>`;
+      });
+      html += `<li class="nav-item"><button class="nav-link" style="background:#fff; color:#e63946; border:1px dashed #e63946; margin-left:5px;" onclick="promptAddSheet()">➕ 新增日期</button></li>`;
+      document.getElementById('tab-list').innerHTML = html;
+      
+      if(names.length > 0) {
+        document.getElementById('tab-controls').style.display = "flex";
+      }
+    }
+
+    async function loadData(sheetName, btn) {
+      if(btn) {
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        btn.classList.add('active');
+        btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+      }
+      currentSheetName = sheetName;
+      document.getElementById('volunteer-area').innerHTML = '';
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border" style="color:#4BC5B4;"></div></div>`;
+      const res = await fetchAPI(API_URL + "?action=getData&sheetName=" + encodeURIComponent(sheetName));
+      if(res.globalTitle) globalTitleVar = res.globalTitle;
+      renderContentHTML(res);
+    }
+
+    function renderContentHTML(res) {
+      if (!res) { document.getElementById('content').innerHTML = '<p class="text-center p-5">無資料</p>'; return; }
+      const nowTime = new Date();
+      const currentMinutes = nowTime.getHours() * 60 + nowTime.getMinutes();
+
+      let isToday = false;
+      let isPastDay = false;
+      let dateMatch = currentSheetName.match(/(\d{1,2})\/(\d{1,2})/);
+      if(dateMatch) {
+        let sMonth = parseInt(dateMatch[1]);
+        let sDay = parseInt(dateMatch[2]);
+        let tMonth = nowTime.getMonth() + 1;
+        let tDay = nowTime.getDate();
+        if (sMonth < tMonth || (sMonth === tMonth && sDay < tDay)) isPastDay = true;
+        else if (sMonth === tMonth && sDay === tDay) isToday = true;
+      } else { isToday = true; }
+
+      let vTime = res.volunteer ? res.volunteer.time : "";
+      let vLoc = res.volunteer ? res.volunteer.location : "";
+      let vTask = res.volunteer ? res.volunteer.task : "";
+
+      document.getElementById('volunteer-area').innerHTML = `
+        <div class="volunteer-card">
+          <div id="vol-display-mode">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div style="font-size: 0.85rem; font-weight: bold; color:#1d3557;">📢 集合資訊 (可修改)</div>
+              <button onclick="toggleEditMode(true)" style="background:#1d3557; color:white; border:none; border-radius:5px; font-weight:bold; font-size:0.8rem; padding:3px 10px;">✏️ 編輯</button>
+            </div>
+            <div style="font-size: 1.25rem; font-weight: bold; margin-top:5px; margin-right: 90px;">⏰ ${vTime || '尚未設定'}</div>
+            <div style="font-size: 1rem; margin-right: 90px; font-weight:bold;">📍 ${vLoc || '尚未設定'}</div>
+            <details class="task-box mt-2">
+              <summary><div class="mission-wrapper"><span class="mission-label">📋 任務：</span><span>${vTask || '無'}</span></div><div class="greeting-hint">💡 參考與守則</div></summary>
+              <div class="task-divider"></div>
+              
+              <div class="script-tabs" style="display:none;">
+                <div class="script-tab" onclick="switchScript('people', this)">與里民</div>
+                <div class="script-tab" onclick="switchScript('chief', this)">與里長</div>
+                <div class="script-tab active" onclick="switchScript('rules', this)">📖 守則</div>
+              </div>
+              <div id="script-people" class="script-content"></div>
+              <div id="script-chief" class="script-content"></div>
+              
+              <div id="script-rules" class="script-content active">
+                <div class="mt-1">
+                  <a href="https://drive.google.com/file/d/1TGchUcbQAeqi4eJSenv1mu3hfJ6r56WK/view?usp=drive_link" target="_blank" class="rule-link-btn">📘 志工守則 (PDF)</a>
+                  <a href="https://drive.google.com/file/d/1NQOlz80eprtgBJYmE5dpi1qqVKPfHejq/view?usp=drive_link" target="_blank" class="rule-link-btn">📙 掃街注意事項 (PDF)</a>
+                  <a href="https://drive.google.com/file/d/1bgSWAnEDg16ugnwsH26X7ZzvnkuvgN8m/view?usp=drive_link" target="_blank" class="rule-link-btn">📸 志工拍照建議 (PDF)</a>
+                </div>
+              </div>
+            </details>
+          </div>
+
+          <div id="vol-edit-mode" style="display:none;">
+             <div style="font-size: 0.85rem; font-weight: bold; color:white; margin-bottom:5px;">修改公開版大標題：</div>
+             <input type="text" id="edit-main-title" class="edit-input" placeholder="例如: 🏮 元宵行程看板 🏮" value="${globalTitleVar}">
+             
+             <div style="font-size: 0.85rem; font-weight: bold; color:white; margin-bottom:5px; margin-top:10px;">修改本頁集合資訊：</div>
+             <input type="text" id="edit-v-time" class="edit-input" placeholder="時間 (例: 18:00)" value="${vTime}">
+             <input type="text" id="edit-v-loc" class="edit-input" placeholder="地點 (例: 廣濟宮)" value="${vLoc}">
+             <textarea id="edit-v-task" class="edit-input" rows="2" placeholder="任務內容...">${vTask}</textarea>
+             <div class="mt-2 text-end">
+                <button onclick="toggleEditMode(false)" style="background:transparent; border:1px solid #1d3557; color:#1d3557; border-radius:5px; padding:4px 12px; margin-right:5px; font-weight:bold;">取消</button>
+                <button onclick="saveVolInfo()" style="background:#e63946; border:none; color:white; border-radius:5px; padding:4px 15px; font-weight:bold;" id="save-btn">💾 儲存</button>
+             </div>
+          </div>
+        </div>`;
+
+      let html = '';
+      if(res.list && res.list.length > 0) {
+        res.list.forEach((item, displayIndex) => {
+          let query = encodeURIComponent(item.address ? item.address : item.location);
+          let navUrl = `https://www.google.com/maps/dir/?api=1&destination=$${query}`;
+          let viewUrl = `https://www.google.com/maps/search/?api=1&query=$${query}`;
+          let itemStr = encodeURIComponent(JSON.stringify(item)).replace(/'/g, "%27");
+          let isSelected = selectedEvents.some(e => e.id === item.id);
+          let btnClass = isSelected ? "btn-mini-addmap selected" : "btn-mini-addmap";
+          let btnText = isSelected ? "✅ 已加地圖" : "➕ 加到地圖";
+
+          let formattedChief = item.chief ? String(item.chief).replace(/里長/g, '').trim().replace('里', '里 ').replace(/\s+/g, ' ') : "";
+          
+          let isPast = false;
+          if (item.foldState === 'FOLD') {
+            isPast = true;
+          } else if (item.foldState === 'OPEN') {
+            isPast = false;
+          } else {
+            if (isPastDay) isPast = true;
+            else if (isToday) {
+                let timeMatch = item.time.match(/(\d{1,2}):(\d{2})/);
+                if(timeMatch) { 
+                  let eventMinutes = parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]);
+                  if(eventMinutes + 120 < currentMinutes) isPast = true; 
+                }
+            }
+          }
+
+          let stateBtnHtml = `<button class="admin-btn" onclick="toggleEventFold(${item.rowIdx}, '${item.foldState}')">⚙️ 自動判斷</button>`;
+          if (item.foldState === 'FOLD') {
+            stateBtnHtml = `<button class="admin-btn status-btn-FOLD" onclick="toggleEventFold(${item.rowIdx}, '${item.foldState}')">🙈 強制收折</button>`;
+          } else if (item.foldState === 'OPEN') {
+            stateBtnHtml = `<button class="admin-btn status-btn-OPEN" onclick="toggleEventFold(${item.rowIdx}, '${item.foldState}')">👁️ 強制展開</button>`;
+          }
+
+          let cardHtml = `
+            <div class="card p-3" style="${isPast ? 'box-shadow:none; border: 1px solid #ddd;' : ''}">
+              <div class="d-flex justify-content-between align-items-start">
+                <div style="flex: 1; padding-right:10px;">
+                  <div class="d-flex align-items-start" style="margin-bottom: 2px;">
+                    <div style="color:#1d3557; font-weight:bold; font-size:0.95rem; white-space:nowrap;">🕒 ${item.time}</div>
+                    <div style="color:#457b9d; margin-left:8px; font-weight:bold; font-size:0.9rem; line-height:1.4;">${formattedChief ? `| 👤 ${formattedChief}` : ''}</div>
+                  </div>
+                  <div class="activity-name">${item.emoji} ${item.name}</div>
+                  <div class="location-text">📍 ${item.location}</div>
+                  <div class="text-muted small">${item.address}</div>
+                </div>
+                <div class="ms-2 d-flex flex-column gap-2" style="min-width: 80px;">
+                  <button onclick="copyToEdit('${itemStr}')" style="background:#e63946; color:white; border:none; border-radius:8px; padding:6px; font-size:0.8rem; font-weight:bold;">⬆️ 設為集合</button>
+                  <button class="${btnClass}" id="btn-cart-${item.id}" onclick="toggleCart('${itemStr}', this)">${btnText}</button>
+                </div>
+              </div>
+              
+              <details class="mt-2 vol-details-box" open>
+                <summary style="color:#457b9d; font-weight:bold; font-size:0.85rem; outline:none;" class="vol-summary-title">📞 里長資訊 & 👥 志工管理</summary>
+                <div class="vol-content-area" style="padding-top:8px; border-top:1px dashed #ccc; margin-top:5px; font-size:0.85rem;">
+                  <div style="margin-bottom:8px;">📞 里長聯絡：<a href="tel:${item.phone}">${item.phone}</a> | 預估：${item.people} 人</div>
+                  <div class="vol-list-container" data-event-name="${item.name}">
+                    <span class="spinner-border spinner-border-sm text-muted"></span> 載入名單中...
+                  </div>
+                </div>
+              </details>
+
+              <div class="admin-controls">
+                <div>
+                  <button class="admin-btn me-1" onclick="moveEvt(${item.rowIdx}, 'up')" ${displayIndex === 0 ? 'disabled' : ''}>⬆️ 往上</button>
+                  <button class="admin-btn" onclick="moveEvt(${item.rowIdx}, 'down')" ${displayIndex === res.list.length - 1 ? 'disabled' : ''}>⬇️ 往下</button>
+                </div>
+                <div>
+                  ${stateBtnHtml}
+                </div>
+              </div>
+
+            </div>`;
+
+          html += isPast ? `<details class="past-event-box" ${item.foldState === 'OPEN' ? 'open' : ''}><summary>${item.time} ${item.name}</summary><div class="mt-2">${cardHtml}</div></details>` : cardHtml;
+        });
+      } else { html = '<p class="text-center p-5 text-muted">本時段暫無排定行程</p>'; }
+      
+      document.getElementById('content').innerHTML = html;
+      updateCartUI();
+      fetchVolunteersData();
+    }
+
+    async function moveCurrentSheet(dir) {
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">移動分頁中...</p></div>`;
+      let url = API_URL + "?action=moveSheet&sheetName=" + encodeURIComponent(currentSheetName) + "&dir=" + dir;
+      let res = await fetchAPI(url);
+      if(res && res.success) { window.location.reload(); } 
+      else { alert(res.error ? res.error : "移動失敗"); window.location.reload(); }
+    }
+
+    async function renameCurrentSheet() {
+      let newName = prompt("請輸入新的分頁名稱：", currentSheetName);
+      if (!newName || newName.trim() === currentSheetName) return;
+      newName = newName.trim();
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">重新命名中...</p></div>`;
+      let url = API_URL + "?action=renameSheet&oldName=" + encodeURIComponent(currentSheetName) + "&newName=" + encodeURIComponent(newName);
+      let res = await fetchAPI(url);
+      if(res && res.success) { window.location.reload(); } 
+      else { alert(res.error ? res.error : "命名失敗"); window.location.reload(); }
+    }
+
+    async function deleteCurrentSheet() {
+      let pwd = prompt(`⛔ 警告！\n您確定要刪除「${currentSheetName}」的所有行程嗎？\n此操作無法復原！\n\n請輸入刪除密碼：`);
+      if (pwd === null) return; 
+      if (pwd !== "1128") {
+        alert("❌ 密碼錯誤，取消刪除！");
+        return;
+      }
+
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border text-danger"></div><p class="mt-2 text-muted">正在刪除...</p></div>`;
+      let url = API_URL + "?action=deleteSheet&sheetName=" + encodeURIComponent(currentSheetName);
+      let res = await fetchAPI(url);
+      if(res && res.success) {
+        window.location.href = window.location.pathname; 
+      } else {
+        alert(res.error ? res.error : "刪除失敗");
+        window.location.reload();
+      }
+    }
+
+    async function promptAddSheet() {
+      let newDate = prompt("請輸入新日期 (例如: 3/10 或 3/10(五))：");
+      if (!newDate) return;
+      newDate = newDate.trim();
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border text-danger"></div><p class="mt-2 text-muted">建立分頁中...</p></div>`;
+      let url = API_URL + "?action=addSheet&sheetName=" + encodeURIComponent(newDate);
+      let res = await fetchAPI(url);
+      if (res && res.success) { alert("✅ 日期分頁建立成功！\n您可以開始新增活動了！"); window.location.reload(); } 
+      else { alert("建立失敗：" + (res ? res.error : "未知錯誤")); window.location.reload(); }
+    }
+
+    function openAddEventModal() { document.getElementById('add-event-modal').style.display = "flex"; }
+    function closeAddEventModal() { document.getElementById('add-event-modal').style.display = "none"; }
+    
+    async function submitAddEvent() {
+      let emoji = document.getElementById('add-evt-emoji').value;
+      let name = document.getElementById('add-evt-name').value.trim();
+      let time = document.getElementById('add-evt-time').value.trim();
+      if (!name || !time) { alert("名稱與時間為必填！"); return; }
+      
+      let data = {
+        emoji: emoji, name: name, time: time,
+        loc: document.getElementById('add-evt-loc').value, address: document.getElementById('add-evt-addr').value,
+        chief: document.getElementById('add-evt-chief').value, phone: document.getElementById('add-evt-phone').value,
+        people: document.getElementById('add-evt-people').value
+      };
+
+      let btn = document.getElementById('submit-add-btn');
+      btn.innerText = "寫入中..."; btn.disabled = true;
+
+      let url = API_URL + "?action=addEvent&sheetName=" + encodeURIComponent(currentSheetName) + "&data=" + encodeURIComponent(JSON.stringify(data));
+      let res = await fetchAPI(url);
+      
+      btn.innerText = "儲存新增"; btn.disabled = false;
+      if (res && res.success) { closeAddEventModal(); loadData(currentSheetName, null); } 
+      else { alert("新增失敗：" + (res ? res.error : "未知錯誤")); }
+    }
+
+    async function moveEvt(rowIdx, dir) {
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">移動中...</p></div>`;
+      let url = API_URL + "?action=moveEvent&sheetName=" + encodeURIComponent(currentSheetName) + "&rowIdx=" + rowIdx + "&dir=" + dir;
+      await fetchAPI(url); loadData(currentSheetName, null);
+    }
+
+    async function toggleEventFold(rowIdx, currentState) {
+      let nextState = "";
+      if (currentState === "") nextState = "OPEN";
+      else if (currentState === "OPEN") nextState = "FOLD";
+      else nextState = "";
+      document.getElementById('content').innerHTML = `<div class="text-center p-5"><div class="spinner-border text-secondary"></div><p class="mt-2 text-muted">更新狀態...</p></div>`;
+      let url = API_URL + "?action=setFoldState&sheetName=" + encodeURIComponent(currentSheetName) + "&rowIdx=" + rowIdx + "&state=" + nextState;
+      await fetchAPI(url); loadData(currentSheetName, null);
+    }
+
+    async function fetchVolunteersData() {
+      const resData = await fetchAPI(API_URL + "?action=getVolunteers");
+      if(resData) {
+        let vMap = resData.volunteers || {};
+        let lMap = resData.limits || {};
+
+        document.querySelectorAll('.vol-list-container').forEach(container => {
+          let evtName = container.getAttribute('data-event-name');
+          let count = vMap[evtName] ? vMap[evtName].length : 0;
+          let limit = lMap.hasOwnProperty(evtName) ? lMap[evtName] : 3;
+
+          let detailsBox = container.closest('details');
+
+          if (limit === 0) {
+            if (detailsBox) {
+                // 幹部版在 limit=0 時的處理
+                container.innerHTML = `
+                  <div class="d-flex justify-content-between align-items-center mt-2 pt-2" style="border-top:1px dashed #ccc;">
+                    <span style="font-weight:bold; color:#457b9d;">🏃‍♀️ 幸福怡起拚</span>
+                    <button onclick="editLimit('${evtName}', ${limit})" style="background:#f1f3f5; border:1px solid #ccc; border-radius:5px; font-size:0.75rem; padding:3px 8px; color:#495057; font-weight:bold;">⚙️ 改上限</button>
+                  </div>
+                `;
+            }
+          } else {
+            if (detailsBox) {
+                let headHtml = `
+                  <div class="d-flex justify-content-between align-items-center mb-2 pb-1 mt-2 pt-2" style="border-top:1px dashed #eee; border-bottom:1px dotted #eee;">
+                    <span style="font-weight:bold; color:#1d3557;">現有報名 (${count}/${limit}人)</span>
+                    <button onclick="editLimit('${evtName}', ${limit})" style="background:#f1f3f5; border:1px solid #ccc; border-radius:5px; font-size:0.75rem; padding:3px 8px; color:#495057; font-weight:bold;">⚙️ 改上限</button>
+                  </div>
+                `;
+
+                if (count > 0) {
+                  let badgesHtml = vMap[evtName].map(name => `
+                    <span class="vol-badge">👤 ${name} 
+                      <span class="delete-vol-btn" onclick="removeVol('${evtName}', '${name}')">✖</span>
+                    </span>
+                  `).join('');
+                  container.innerHTML = headHtml + badgesHtml;
+                } else {
+                  container.innerHTML = headHtml + `<div style="color:#999; font-weight:bold;">目前無志工報名</div>`;
+                }
+            }
+          }
+        });
+      }
+    }
+
+    async function editLimit(evtName, currentLimit) {
+      let newLimit = prompt(`請輸入「${evtName}」的報名人數上限：\n(輸入 0 或 - 表示暫無志工需求)`, currentLimit);
+      if (newLimit === null) return;
+      
+      let val = newLimit.trim();
+      let finalLimit = 3;
+      if (val === '0' || val === '-') {
+        finalLimit = 0;
+      } else {
+        finalLimit = parseInt(val);
+        if (isNaN(finalLimit) || finalLimit < 0) { alert("請輸入有效的數字！"); return; }
+      }
+      
+      let url = API_URL + "?action=setLimit&eventName=" + encodeURIComponent(evtName) + "&limit=" + finalLimit;
+      let res = await fetchAPI(url);
+      if(res && res.success) fetchVolunteersData(); 
+      else alert("設定失敗");
+    }
+
+    async function removeVol(eventName, volName) {
+      if(!confirm(`⚠️ 確定要取消志工「${volName}」的報名嗎？\n取消後名額會直接釋出。`)) return;
+      let url = API_URL + "?action=deleteVolunteer&eventName=" + encodeURIComponent(eventName) + "&volName=" + encodeURIComponent(volName);
+      let res = await fetchAPI(url);
+      if(res && res.success) fetchVolunteersData(); 
+      else alert(res.error ? res.error : "移除失敗");
+    }
+
+    function toggleEditMode(show) { document.getElementById('vol-display-mode').style.display = show ? 'none' : 'block'; document.getElementById('vol-edit-mode').style.display = show ? 'block' : 'none'; }
+    function copyToEdit(itemStr) { let item = JSON.parse(decodeURIComponent(itemStr)); toggleEditMode(true); document.getElementById('edit-v-time').value = item.time; document.getElementById('edit-v-loc').value = item.address ? item.address : item.location; window.scrollTo({top: 0, behavior: 'smooth'}); }
+    async function saveVolInfo() { let btn = document.getElementById('save-btn'); btn.innerText = "儲存中..."; btn.disabled = true; let newTitle = document.getElementById('edit-main-title').value; let time = document.getElementById('edit-v-time').value; let loc = document.getElementById('edit-v-loc').value; let task = document.getElementById('edit-v-task').value; let url = API_URL + "?action=updateInfo&sheetName=" + encodeURIComponent(currentSheetName) + "&time=" + encodeURIComponent(time) + "&loc=" + encodeURIComponent(loc) + "&task=" + encodeURIComponent(task) + "&mainTitle=" + encodeURIComponent(newTitle); await fetchAPI(url); loadData(currentSheetName, null); }
+    function switchScript(type, btn) { event.preventDefault(); event.stopPropagation(); document.querySelectorAll('.script-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.script-content').forEach(c => c.classList.remove('active')); document.getElementById('script-' + type).classList.add('active'); }
+    function toggleCart(itemJsonStr, btnEl) { let item = JSON.parse(decodeURIComponent(itemJsonStr)); let index = selectedEvents.findIndex(e => e.id === item.id); if (index > -1) { selectedEvents.splice(index, 1); btnEl.classList.remove('selected'); btnEl.innerText = "➕ 加到地圖"; } else { selectedEvents.push(item); btnEl.classList.add('selected'); btnEl.innerText = "✅ 已加地圖"; } updateCartUI(); }
+    function clearCart() { selectedEvents = []; document.querySelectorAll('.btn-mini-addmap').forEach(btn => { btn.classList.remove('selected'); btn.innerText = "➕ 加到地圖"; }); updateCartUI(); }
+    function updateCartUI() { const cartBar = document.getElementById('floating-cart'); const countSpan = document.getElementById('cart-count'); countSpan.innerText = selectedEvents.length; cartBar.style.display = selectedEvents.length > 0 ? "flex" : "none"; }
+    async function openMapModal() { document.getElementById('map-modal').style.display = "flex"; document.getElementById('map-container').style.display = "none"; document.getElementById('map-loading').style.display = "block"; let mapData = selectedEvents.map(e => ({id: e.id, location: e.location, address: e.address, time: e.time, name: e.name, chief: e.chief, emoji: e.emoji})); let url = API_URL + "?action=getGeocodes&data=" + encodeURIComponent(JSON.stringify(mapData)); const geoData = await fetchAPI(url); if(geoData) renderMap(geoData); }
+    function closeMapModal() { document.getElementById('map-modal').style.display = "none"; }
+    function renderMap(geoData) { document.getElementById('map-loading').style.display = "none"; document.getElementById('map-container').style.display = "block"; if (leafletMap !== null) leafletMap.remove(); leafletMap = L.map('map-container').setView([25.0, 121.5], 13); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(leafletMap); let bounds = []; geoData.forEach(pt => { if (!pt.error && pt.lat && pt.lng) { let shortName = pt.name.length > 4 ? pt.name.substring(0, 4) + '...' : pt.name; let customIcon = L.divIcon({ className: 'custom-map-label', html: `<span>${pt.time}</span> ${pt.emoji} ${shortName}`, iconSize: [null, null] }); let marker = L.marker([pt.lat, pt.lng], {icon: customIcon}).addTo(leafletMap); let formattedChief = pt.chief ? String(pt.chief).replace(/里長/g, '').trim().replace('里', '里 ').replace(/\s+/g, ' ') : ""; let chiefHeaderHtml = formattedChief ? `<span style="color:#1d3557; margin-left: 8px;">| 👤 ${formattedChief}</span>` : ""; marker.bindPopup(`<div style="font-size:1.1rem; font-weight:bold; color:#e63946; margin-bottom:5px;">🕒 ${pt.time} ${chiefHeaderHtml}</div><div style="font-size:1rem; font-weight:bold; color:#1d3557; line-height:1.4;">${pt.emoji} ${pt.name}</div>`); bounds.push([pt.lat, pt.lng]); } }); if (bounds.length > 0) leafletMap.fitBounds(bounds, { padding: [50, 50] }); }
+  </script>
+</body>
+</html>
